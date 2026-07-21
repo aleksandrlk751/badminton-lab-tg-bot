@@ -1,7 +1,8 @@
 # План реализации
 
 > Этапы, зависимости и критерии готовности.  
-> Актуально на основе [`BRIEF.md`](BRIEF.md). Целевая аудитория — **парные игроки**.
+> Актуально на основе [`BRIEF.md`](BRIEF.md). Целевая аудитория — **парные игроки**.  
+> **Этап 0 завершён** — отчёт spike: [`spike-parser.md`](spike-parser.md).
 
 ## Принятые допущения для плана
 
@@ -21,14 +22,16 @@
 ## Обзор этапов
 
 ```
-[0 Spike] → [1 Каркас] → [2 Worker слепок] → [3 Метрики] → [4 Bot shell]
+[0 Spike ✓] → [1 Каркас] → [2 Worker слепок] → [3 Метрики] → [4 Bot shell]
     → [5 H2H пары] → [6 График рейтинга] → [7 Партнёры] → [8 VPS деплой]
                                                               → [9+ Roadmap]
 ```
 
 ---
 
-## Этап 0 — Spike парсера (парные данные)
+## Этап 0 — Spike парсера (парные данные) ✓
+
+**Статус:** завершён (2026-07-21). Отчёт и выводы: **[`spike-parser.md`](spike-parser.md)**.
 
 **Цель:** подтвердить, что с badminton4u.ru можно стабильно получить данные для парных игроков.
 
@@ -37,10 +40,16 @@
 - Прототип парсеров (можно в `worker` или временном модуле): извлечь пары, partner в матче, pair-vs-pair или fallback через 4 игрока.
 - Зафиксировать: URL/AJAX для парных `rivals`, структура регистрации «без пары», `external_key` для матчей.
 
+**Итог spike (кратко):**
+- Pair-vs-pair **GO** через `gamesd/?tourID=` (SSR, 4 игрока на матч).
+- Регистрация: SSR в `#tour-reg-list1` **или** AJAX (`POST /?ajax`) — worker поддержит оба варианта.
+- Модуль `worker`, Java **17** (spike), 7 fixtures, 6 парсеров, 8 unit-тестов green.
+- Эталоны: игрок [18499](https://badminton4u.ru/players/18499), турниры [12713](https://badminton4u.ru/tournaments/12713) / [12834](https://badminton4u.ru/tournaments/12834).
+
 **DoD:**
-- [ ] Отчёт в `docs/spike-parser.md` (или комментарий в PR): go/no-go по pair-vs-pair.
-- [ ] ≥5 fixtures в `worker/src/test/resources/html/`.
-- [ ] Парсер проходит unit-тесты на fixtures для: турнир, пара в регистрации, итоговая строка пары.
+- [x] Отчёт в [`docs/spike-parser.md`](spike-parser.md): go/no-go по pair-vs-pair.
+- [x] ≥5 fixtures в `worker/src/test/resources/html/` (фактически 7).
+- [x] Парсер проходит unit-тесты на fixtures для: турнир, пара в регистрации, итоговая строка пары.
 
 **Оценка:** 2–4 дня.
 
@@ -242,8 +251,8 @@ flowchart LR
 
 | Риск | Митигация |
 |---|---|
-| Парные `rivals`/`games` только через AJAX | Этап 0; reverse-engineer endpoint |
-| Pair-vs-pair недоступен | MVP H2H player-vs-player в парном разряде + дисклеймер |
+| Парные `rivals`/`games` только через AJAX | **Этап 0 ✓** — `gamesd/?tourID=` SSR; `games/?user1&user2` — AJAX; регистрация — SSR или AJAX (см. [`spike-parser.md`](spike-parser.md)) |
+| Pair-vs-pair недоступен | **Снят** — pair-vs-pair через `gamesd/?tourID=`; см. [`spike-parser.md`](spike-parser.md) |
 | Долгий первый слепок | Тюнинг пула/RPS; incremental sync по `updated_at` (позже) |
 | Блокировка парсера | Rate-limit, User-Agent с контактом, backoff |
 | Публичный бот без auth | Rate-limit на команды TG, мониторинг злоупотреблений |
@@ -252,4 +261,5 @@ flowchart LR
 
 ## Следующий шаг
 
-**Начать этап 0:** собрать fixtures и spike-парсер парных страниц.
+**Этап 1:** каркас multi-module (`core`, `worker`, `bot`), Flyway, docker-compose, заглушка `/start`.  
+Spike-парсер и fixtures — в модуле `worker`; отчёт этапа 0: [`spike-parser.md`](spike-parser.md).

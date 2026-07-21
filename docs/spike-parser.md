@@ -1,0 +1,147 @@
+# Spike парсера (этап 0)
+
+> Статус: **go** (2026-07-21).  
+> Java spike: **17** (целевая 21 — на этапе 1).
+
+## Эталоны (от пользователя)
+
+| Fixture | URL |
+|---|---|
+| `player-18499.html` | https://badminton4u.ru/players/18499 |
+| `tournament-completed-12713.html` | https://badminton4u.ru/tournaments/12713 |
+| `tournament-upcoming-12834.html` | https://badminton4u.ru/tournaments/12834 |
+
+Дополнительно для pair-vs-pair и rivals:
+
+| Fixture | URL | Зачем |
+|---|---|---|
+| `tournaments-list-r77-pairs.html` | список r77 | парсер списка турниров |
+| `rivals-18499.html` | `/rivals/18499` | пустая таблица (edge case) |
+| `rivals-19080-d.html` | `/rivals/19080` | эталон непустых rivals |
+| `games-tournament-12713.html` | `/gamesd/?tourID=12713` | **pair-vs-pair** матчи |
+
+## Сборка и тесты
+
+```powershell
+$env:JAVA_HOME = "C:\Program Files\Eclipse Adoptium\jdk-18.0.2.101-hotspot"
+.\mvnw.cmd -pl worker test
+```
+
+> Surefire: `forkCount=0` из-за кириллицы в `%TEMP%` на Windows.
+
+## Парсеры (unit-тесты green)
+
+| Класс | Что извлекает |
+|---|---|
+| `TournamentListParser` | ID, дата, лимит, медалисты-пары |
+| `TournamentResultsParser` | итоговая таблица пар |
+| `TournamentRegistrationParser` | пары в `#tour-reg-list1` |
+| `PlayerProfileParser` | ник, ФИО, город, рейтинг D, история |
+| `RivalsParser` | сводка соперников (SSR) |
+| `TournamentGamesParser` | матчи 2v2 с `gamesd/?tourID=` |
+
+## Ключевые выводы
+
+### Pair-vs-pair — **GO**
+
+Страница `gamesd/?tourID={id}` отдаёт **SSR-таблицу** с 4 игроками на матч (обе пары, рейтинги, счёт по сетам, дельты).  
+Это основной источник для `match` / `match_player` и pair H2H.
+
+`games/?user1ID&user2ID` — по-прежнему без строк в HTML (lazy JS); для MVP H2H деталей использовать `gamesd` или reverse-engineer AJAX позже.
+
+### Регистрация — SSR или AJAX
+
+- Турнир **12834**: пары уже в HTML (`#tour-reg-list1`, 14 пар).
+- Турнир **12840** (ранний spike): пустые `#tour-reg-list1/2` → нужен POST `/?ajax` (поле `list` в JSON).
+
+Worker должен поддерживать **оба** варианта.
+
+### Rivals
+
+- SSR в `section.rat_* > section.player-rivals > table`.
+- У игрока **18499** на `/rivals/18499` таблица **пустая** (нет singles-соперников в DOM; активная вкладка D).
+- Данные могут быть в другой секции или подгружаться — для слепка проверять непустой ответ; fallback: парсить `results/{id}`.
+
+### external_key матча
+
+```
+badminton4u:game:{tournamentId}:{playedAt}:{sortedA}:vs{sortedB}:{scoreSets}:{stage}
+```
+
+## Go/no-go
+
+| Компонент | Вердикт |
+|---|---|
+| Слепок турниров/участников | **GO** |
+| Итоги пар | **GO** |
+| Регистрация пар | **GO** (SSR + AJAX fallback) |
+| Профиль игрока | **GO** |
+| Rivals сводка | **GO** (SSR; пустые таблицы — норма) |
+| Pair-vs-pair матчи | **GO** через `gamesd/?tourID=` |
+| H2H `games/?user1&user2` | **Условно** — нужен AJAX или агрегация из `gamesd` |
+
+**Этап 0 закрыт.** Следующий шаг — этап 1 (каркас: `core`, Flyway, docker-compose).
+
+## Примеры для ручной сверки
+
+Сверьте значения **парсера** (колонка «Парсер») с сайтом по указанному URL. Fixture — снимок HTML на момент spike.
+
+### 1. Список турниров — `TournamentListParser`
+
+| | |
+|---|---|
+| **Fixture** | `tournaments-list-r77-pairs.html` |
+| **URL** | [список r77](https://badminton4u.ru/tournaments/?cities[]=r77&types[]=md&types[]=wd&types[]=xd&types[]=d&winners=1) |
+| **Парсер** | id=`12713`, дата=`14.06.2026`, время=`12:00`, лимит=`550`, название=`Женская лига WDC`, doubles=`true` |
+| **Медалисты** | 🥇 `19080` + `18870`; 🥈 `18153` + `16426`; 🥉 `35663` + `4396` |
+
+### 2. Итоги турнира — `TournamentResultsParser`
+
+| | |
+|---|---|
+| **Fixture** | `tournament-completed-12713.html` |
+| **URL** | [tournaments/12713](https://badminton4u.ru/tournaments/12713) → вкладка «результаты» |
+| **Парсер (1 место)** | `19080` + `18870`; рейтинги до `577` / `514`; пара `546`; дельта `+27.3`; матчи `5 (5-0)`; сеты `12 (10-2)` |
+| **Парсер** | всего строк в таблице пар: **12** |
+
+### 3. Регистрация пар — `TournamentRegistrationParser`
+
+| | |
+|---|---|
+| **Fixture** | `tournament-upcoming-12834.html` |
+| **URL** | [tournaments/12834](https://badminton4u.ru/tournaments/12834) → «Список зарегистрированных» |
+| **Парсер** | id=`12834`, пар в списке: **14**, `#tour-reg-list2` пуст |
+| **Пара №1** | `19045` + `19048`; рейтинги `409` / `308`; пара `359`; заявка `02.07.2026 16:38` |
+| **Пара №2** | `19570` + `36808`; рейтинги `470` / `379`; пара `425` |
+
+### 4. Профиль игрока — `PlayerProfileParser`
+
+| | |
+|---|---|
+| **Fixture** | `player-18499.html` |
+| **URL** | [players/18499](https://badminton4u.ru/players/18499) |
+| **Парсер** | id=`18499`, nick=`Olya_fox`, ФИО=`Крупская Ольга Андреевна`, город=`Красногорск`, рука=`правая` |
+| **Рейтинг D** | `535` |
+| **История D (последние 3 точки)** | `09.03.2026 → 548`, `11.04.2026 → 549`, `14.06.2026 → 535` (график «последние 10» / `chartLastData_d`) |
+
+### 5. Соперники — `RivalsParser`
+
+| | |
+|---|---|
+| **Fixture / URL** | `rivals-18499.html` → [rivals/18499](https://badminton4u.ru/rivals/18499) |
+| **Парсер** | **0** записей (пустая таблица в HTML — ожидаемо для spike) |
+| **Fixture / URL** | `rivals-19080-d.html` → [rivals/19080](https://badminton4u.ru/rivals/19080) |
+| **Парсер (пример)** | соперник `6299`: игр=`3`, побед=`3`, поражений=`0`, дельта=`+22.2` |
+
+### 6. Матчи pair-vs-pair — `TournamentGamesParser`
+
+| | |
+|---|---|
+| **Fixture** | `games-tournament-12713.html` |
+| **URL** | [gamesd/?tourID=12713](https://badminton4u.ru/gamesd/?tourID=12713) |
+| **Парсер (финал)** | дата `14.06.2026 12:00`, стадия `фин`, счёт **`1:2`** |
+| **Сторона A** | `18153` (480) + `16426` (525); дельта **−5.7** |
+| **Сторона B** | `19080` (577) + `18870` (514); дельта **+5.7** |
+| **Парсер** | всего матчей в таблице: **23** |
+
+Если расхождение — укажите URL, поле и значение на сайте; поправим парсер или fixture.
