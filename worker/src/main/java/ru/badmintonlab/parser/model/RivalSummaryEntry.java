@@ -1,14 +1,16 @@
 package ru.badmintonlab.parser.model;
 
-import java.math.BigDecimal;
-import java.util.Optional;
-
+/**
+ * Агрегат player↔opponent для экрана «Соперники» (вариант C).
+ * Только W/L; H2H, Form и delta — из {@link PairMatch}.
+ */
 public record RivalSummaryEntry(
+        long playerId,
         long opponentId,
-        Optional<BigDecimal> opponentRating,
-        int games,
         int wins,
-        int losses,
-        Optional<BigDecimal> deltaSum
+        int losses
 ) {
+    public int games() {
+        return wins + losses;
+    }
 }

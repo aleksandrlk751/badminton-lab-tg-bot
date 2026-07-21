@@ -11,14 +11,12 @@
 | `tournament-completed-12713.html` | https://badminton4u.ru/tournaments/12713 |
 | `tournament-upcoming-12834.html` | https://badminton4u.ru/tournaments/12834 |
 
-Дополнительно для pair-vs-pair и rivals:
+Дополнительно:
 
 | Fixture | URL | Зачем |
 |---|---|---|
 | `tournaments-list-r77-pairs.html` | список r77 | парсер списка турниров |
-| `rivals-18499.html` | `/rivals/18499` | пустая таблица (edge case) |
-| `rivals-19080-d.html` | `/rivals/19080` | эталон непустых rivals |
-| `games-tournament-12713.html` | `/gamesd/?tourID=12713` | **pair-vs-pair** матчи |
+| `games-tournament-12713.html` | `/gamesd/?tourID=12713` | pair-vs-pair матчи и агрегат соперников |
 
 ## Сборка и тесты
 
@@ -37,8 +35,8 @@ $env:JAVA_HOME = "C:\Program Files\Eclipse Adoptium\jdk-18.0.2.101-hotspot"
 | `TournamentResultsParser` | итоговая таблица пар |
 | `TournamentRegistrationParser` | пары в `#tour-reg-list1` |
 | `PlayerProfileParser` | ник, ФИО, город, рейтинг D, история |
-| `RivalsParser` | сводка соперников (SSR) |
 | `TournamentGamesParser` | матчи 2v2 с `gamesd/?tourID=` |
+| `RivalSummaryAggregator` | player↔opponent W/L из списка `PairMatch` (вариант C) |
 
 ## Ключевые выводы
 
@@ -54,13 +52,12 @@ $env:JAVA_HOME = "C:\Program Files\Eclipse Adoptium\jdk-18.0.2.101-hotspot"
 - Турнир **12834**: пары уже в HTML (`#tour-reg-list1`, 14 пар).
 - Турнир **12840** (ранний spike): пустые `#tour-reg-list1/2` → нужен POST `/?ajax` (поле `list` в JSON).
 
-Worker должен поддерживать **оба** варианта.
+Worker поддерживает **оба** варианта регистрации (SSR и AJAX).
 
-### Rivals
+### `/rivals/{id}` — не используем
 
-- SSR в `section.rat_* > section.player-rivals > table`.
-- У игрока **18499** на `/rivals/18499` таблица **пустая** (нет singles-соперников в DOM; активная вкладка D).
-- Данные могут быть в другой секции или подгружаться — для слепка проверять непустой ответ; fallback: парсить `results/{id}`.
+Spike: таблица на `/rivals/{id}` для парных игроков пустая. Соперники — только из `gamesd`
+(`RivalSummaryAggregator`, вариант C). См. [`BRIEF.md`](BRIEF.md).
 
 ### external_key матча
 
@@ -76,7 +73,8 @@ badminton4u:game:{tournamentId}:{playedAt}:{sortedA}:vs{sortedB}:{scoreSets}:{st
 | Итоги пар | **GO** |
 | Регистрация пар | **GO** (SSR + AJAX fallback) |
 | Профиль игрока | **GO** |
-| Rivals сводка | **GO** (SSR; пустые таблицы — норма) |
+| Rivals `/rivals` | **Не используем** |
+| Соперники (агрегат из `gamesd`) | **GO** — `RivalSummaryAggregator` |
 | Pair-vs-pair матчи | **GO** через `gamesd/?tourID=` |
 | H2H `games/?user1&user2` | **Условно** — нужен AJAX или агрегация из `gamesd` |
 
@@ -124,14 +122,14 @@ badminton4u:game:{tournamentId}:{playedAt}:{sortedA}:vs{sortedB}:{scoreSets}:{st
 | **Рейтинг D** | `535` |
 | **История D (последние 3 точки)** | `09.03.2026 → 548`, `11.04.2026 → 549`, `14.06.2026 → 535` (график «последние 10» / `chartLastData_d`) |
 
-### 5. Соперники — `RivalsParser`
+### 5. Соперники — `RivalSummaryAggregator` (вариант C)
 
 | | |
 |---|---|
-| **Fixture / URL** | `rivals-18499.html` → [rivals/18499](https://badminton4u.ru/rivals/18499) |
-| **Парсер** | **0** записей (пустая таблица в HTML — ожидаемо для spike) |
-| **Fixture / URL** | `rivals-19080-d.html` → [rivals/19080](https://badminton4u.ru/rivals/19080) |
-| **Парсер (пример)** | соперник `6299`: игр=`3`, побед=`3`, поражений=`0`, дельта=`+22.2` |
+| **Fixture** | `games-tournament-12713.html` (тот же, что §6) |
+| **Pipeline** | `TournamentGamesParser` → `RivalSummaryAggregator.aggregate()` |
+| **Финал (19080 vs 18153)** | 19080: 1 победа; 18153: 1 поражение (player↔player из одного матча) |
+| **Полный турнир** | у 19080 есть соперники с `games ≥ 2`; delta **не** в summary — только в `PairMatch` |
 
 ### 6. Матчи pair-vs-pair — `TournamentGamesParser`
 

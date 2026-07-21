@@ -157,7 +157,8 @@ CREATE INDEX idx_match_player_player ON match_player (player_id);
 CREATE INDEX idx_match_tournament ON match (tournament_id, played_at);
 
 -- ---------------------------------------------------------------------------
--- Сводка соперников (из rivals/, храним при слепке)
+-- Сводка соперников (агрегат player↔opponent из Match; вариант C — только W/L)
+-- H2H, Form, delta — из match / match_player, не из этой таблицы
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE rival_summary (
@@ -166,9 +167,9 @@ CREATE TABLE rival_summary (
     discipline      discipline NOT NULL,
     wins            SMALLINT NOT NULL DEFAULT 0,
     losses          SMALLINT NOT NULL DEFAULT 0,
-    delta_sum       NUMERIC(8,1),
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-    PRIMARY KEY (player_id, opponent_id, discipline)
+    PRIMARY KEY (player_id, opponent_id, discipline),
+    CHECK (player_id <> opponent_id)
 );
 
 CREATE INDEX idx_rival_summary_opponent ON rival_summary (opponent_id);

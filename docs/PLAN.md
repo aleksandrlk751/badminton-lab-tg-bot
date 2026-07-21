@@ -35,20 +35,20 @@
 
 **Цель:** подтвердить, что с badminton4u.ru можно стабильно получить данные для парных игроков.
 
-**Задачи:**
-- Скачать и сохранить HTML-fixtures: список турниров, будущий парный турнир (регистрации/пары), прошедший парный турнир (итоги), профиль парного игрока, `rivals` (парная вкладка), `games` (парная встреча).
-- Прототип парсеров (можно в `worker` или временном модуле): извлечь пары, partner в матче, pair-vs-pair или fallback через 4 игрока.
-- Зафиксировать: URL/AJAX для парных `rivals`, структура регистрации «без пары», `external_key` для матчей.
+**Задачи (выполнено):**
+- HTML-fixtures: список турниров, будущий/прошедший парный турнир, профиль игрока, `gamesd` турнира.
+- Прототип парсеров в `worker`: пары, pair-vs-pair, `external_key` матчей, агрегатор соперников.
+- Зафиксировано: регистрация SSR/AJAX; `/rivals` отвергнут — соперники из `gamesd`.
 
 **Итог spike (кратко):**
 - Pair-vs-pair **GO** через `gamesd/?tourID=` (SSR, 4 игрока на матч).
 - Регистрация: SSR в `#tour-reg-list1` **или** AJAX (`POST /?ajax`) — worker поддержит оба варианта.
-- Модуль `worker`, Java **17** (spike), 7 fixtures, 6 парсеров, 8 unit-тестов green.
+- Модуль `worker`, Java **17** (spike), **5** fixtures, 5 парсеров + агрегатор, unit-тесты green.
 - Эталоны: игрок [18499](https://badminton4u.ru/players/18499), турниры [12713](https://badminton4u.ru/tournaments/12713) / [12834](https://badminton4u.ru/tournaments/12834).
 
 **DoD:**
 - [x] Отчёт в [`docs/spike-parser.md`](spike-parser.md): go/no-go по pair-vs-pair.
-- [x] ≥5 fixtures в `worker/src/test/resources/html/` (фактически 7).
+- [x] ≥5 fixtures в `worker/src/test/resources/html/` (фактически **5**).
 - [x] Парсер проходит unit-тесты на fixtures для: турнир, пара в регистрации, итоговая строка пары.
 
 **Оценка:** 2–4 дня.
@@ -85,8 +85,9 @@
 - Pipeline (многопоточный, rate-limited):
   1. Турниры `r77` (фильтр парные типы + все прошедшие/будущие в окне 3 лет).
   2. Страница турнира → участники, пары, `Participation`, `Pair`, `TournamentRegistration`.
-  3. Профили игроков → `Player`, `player_rating`, `player_rating_history`.
-  4. `rivals` (парная дисциплина) → `rival_summary`.
+  3. Для **завершённых** парных турниров: `gamesd/?tourID=` → `Match`, `match_player`;
+     `RivalSummaryAggregator` → `rival_summary` (player↔player W/L).
+  4. Профили игроков → `Player`, `player_rating`, `player_rating_history`.
 - Идемпотентность: upsert по external ID, `snapshot_meta.last_sync_at`.
 - Spring `@Scheduled` — раз в сутки; ручной trigger для dev.
 - Метрики worker: число турниров/игроков, ошибки, длительность слепка.
@@ -251,7 +252,7 @@ flowchart LR
 
 | Риск | Митигация |
 |---|---|
-| Парные `rivals`/`games` только через AJAX | **Этап 0 ✓** — `gamesd/?tourID=` SSR; `games/?user1&user2` — AJAX; регистрация — SSR или AJAX (см. [`spike-parser.md`](spike-parser.md)) |
+| Парные `rivals` на `/rivals/{id}` | **Не используем** — соперники только из `gamesd` при анализе турнира |
 | Pair-vs-pair недоступен | **Снят** — pair-vs-pair через `gamesd/?tourID=`; см. [`spike-parser.md`](spike-parser.md) |
 | Долгий первый слепок | Тюнинг пула/RPS; incremental sync по `updated_at` (позже) |
 | Блокировка парсера | Rate-limit, User-Agent с контактом, backoff |
