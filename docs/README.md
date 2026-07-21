@@ -39,7 +39,8 @@ Telegram-бот для любителей бадминтона (комьюнит
 ```
 docs/README.md   — этот файл
 docs/BRIEF.md    — детальный бриф проекта (решения, формулы, открытые вопросы)
-docs/schema.sql  — черновик DDL PostgreSQL (Flyway)
+docs/PLAN.md    — план реализации по этапам
+docs/schema.sql — черновик DDL PostgreSQL (Flyway)
 AGENTS.md        — инструкции для AI-агентов (в корне: автозагрузка агент-системой)
 ```
 
