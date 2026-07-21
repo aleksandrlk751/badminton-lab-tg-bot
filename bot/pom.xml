@@ -10,9 +10,9 @@
         <version>0.1.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>worker</artifactId>
-    <name>worker</name>
-    <description>Парсер badminton4u.ru и фоновый слепок данных</description>
+    <artifactId>bot</artifactId>
+    <name>bot</name>
+    <description>Telegram-бот Badminton LAB</description>
 
     <dependencies>
         <dependency>
@@ -28,13 +28,12 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.jsoup</groupId>
-            <artifactId>jsoup</artifactId>
+            <groupId>org.telegram</groupId>
+            <artifactId>telegrambots-springboot-longpolling-starter</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <scope>test</scope>
+            <groupId>org.telegram</groupId>
+            <artifactId>telegrambots-client</artifactId>
         </dependency>
     </dependencies>
 
@@ -44,7 +43,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>ru.badmintonlab.worker.WorkerApplication</mainClass>
+                    <mainClass>ru.badmintonlab.bot.BotApplication</mainClass>
                 </configuration>
             </plugin>
         </plugins>

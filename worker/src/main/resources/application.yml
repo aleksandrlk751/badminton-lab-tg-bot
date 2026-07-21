@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: badminton-lab-worker
+  config:
+    import: optional:classpath:application-core.yml
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:badminton_lab}
+    username: ${DB_USER:badminton}
+    password: ${DB_PASSWORD:badminton}
+    driver-class-name: org.postgresql.Driver
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+badminton-lab:
+  parser:
+    threads: ${PARSER_THREADS:8}
+    max-rps: ${PARSER_MAX_RPS:10}
+    user-agent: ${PARSER_USER_AGENT:BadmintonLabBot/0.1 (+https://github.com/badminton-lab-tg-bot)}

@@ -1,0 +1,25 @@
+spring:
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+badminton-lab:
+  metrics:
+    half-life-days: 180
+    form-k: 0.5
+    s-ref: 1.0
+    b-max: 20.0
+    s0: 1.0
+    w1: 0.4
+    w2: 0.3
+    w3: 0.3
+    d-scale: 10.0
+    partner-history-months: 12

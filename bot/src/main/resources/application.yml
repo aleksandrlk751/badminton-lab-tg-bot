@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: badminton-lab-bot
+  config:
+    import: optional:classpath:application-core.yml
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:badminton_lab}
+    username: ${DB_USER:badminton}
+    password: ${DB_PASSWORD:badminton}
+    driver-class-name: org.postgresql.Driver
+
+telegram:
+  bot:
+    enabled: ${TELEGRAM_BOT_ENABLED:false}
+    token: ${BOT_TOKEN:}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
