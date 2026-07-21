@@ -22,7 +22,7 @@
 ## Обзор этапов
 
 ```
-[0 Spike ✓] → [1 Каркас] → [2 Worker слепок] → [3 Метрики] → [4 Bot shell]
+[0 Spike ✓] → [1 Каркас ✓] → [2 Worker слепок] → [3 Метрики] → [4 Bot shell]
     → [5 H2H пары] → [6 График рейтинга] → [7 Партнёры] → [8 VPS деплой]
                                                               → [9+ Roadmap]
 ```
@@ -55,23 +55,26 @@
 
 ---
 
-## Этап 1 — Каркас проекта
+## Этап 1 — Каркас проекта ✓
+
+**Статус:** завершён (2026-07-21).
 
 **Цель:** собираемый multi-module проект + локальная инфраструктура.
 
-**Задачи:**
+**Задачи (выполнено):**
 - Maven parent + модули:
   - **`core`** — JPA-сущности, репозитории, Flyway-миграции (из [`schema.sql`](schema.sql)), конфиг-параметры метрик.
-  - **`worker`** — зависит от `core`, Spring Boot без web (или minimal actuator).
+  - **`worker`** — зависит от `core`, Spring Boot без web (actuator).
   - **`bot`** — зависит от `core`, Spring Boot + Telegram long polling.
-- `docker-compose.yml`: PostgreSQL (+ pg_trgm), опционально профили `bot` / `worker`.
+- `docker-compose.yml`: PostgreSQL (+ pg_trgm), порт **5433** (обход локального Postgres на 5432).
 - Flyway V1: перенос `schema.sql` в `core/src/main/resources/db/migration/`.
 - `.env.example`: `BOT_TOKEN`, `DB_*`, параметры парсера (`PARSER_THREADS`, `PARSER_MAX_RPS`).
+- **`dev.ps1` / `dev.cmd`** — короткие команды запуска/остановки компонентов (см. [`README.md`](README.md)).
 
 **DoD:**
-- [ ] `./mvnw clean verify` проходит.
-- [ ] `docker compose up -d postgres` + приложение подключается к БД, миграции накатываются.
-- [ ] Bot отвечает на `/start` (заглушка).
+- [x] `./mvnw clean verify` проходит.
+- [x] `docker compose up -d postgres` + приложение подключается к БД, миграции накатываются.
+- [x] Bot отвечает на `/start` (заглушка).
 
 **Оценка:** 3–5 дней.
 
@@ -262,5 +265,5 @@ flowchart LR
 
 ## Следующий шаг
 
-**Этап 1:** каркас multi-module (`core`, `worker`, `bot`), Flyway, docker-compose, заглушка `/start`.  
-Spike-парсер и fixtures — в модуле `worker`; отчёт этапа 0: [`spike-parser.md`](spike-parser.md).
+**Этап 2:** worker — полный слепок региона r77 (турниры, участники, `gamesd`, профили, идемпотентный upsert).  
+Локальный запуск — [`README.md`](README.md) (`dev.ps1`). Spike-парсер: [`spike-parser.md`](spike-parser.md).

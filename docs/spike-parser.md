@@ -21,11 +21,17 @@
 ## Сборка и тесты
 
 ```powershell
-$env:JAVA_HOME = "C:\Program Files\Eclipse Adoptium\jdk-18.0.2.101-hotspot"
+.\dev test
+```
+
+Или напрямую через Maven:
+
+```powershell
 .\mvnw.cmd -pl worker test
 ```
 
-> Surefire: `forkCount=0` из-за кириллицы в `%TEMP%` на Windows.
+> Surefire: `forkCount=0` из-за кириллицы в `%TEMP%` на Windows.  
+> Полная сборка всех модулей: `.\dev verify`. См. [`README.md`](README.md).
 
 ## Парсеры (unit-тесты green)
 
@@ -78,7 +84,7 @@ badminton4u:game:{tournamentId}:{playedAt}:{sortedA}:vs{sortedB}:{scoreSets}:{st
 | Pair-vs-pair матчи | **GO** через `gamesd/?tourID=` |
 | H2H `games/?user1&user2` | **Условно** — нужен AJAX или агрегация из `gamesd` |
 
-**Этап 0 закрыт.** Следующий шаг — этап 1 (каркас: `core`, Flyway, docker-compose).
+**Этап 0 закрыт.** Следующий шаг — этап 2 (worker: слепок r77). Локальные команды: [`README.md`](README.md).
 
 ## Примеры для ручной сверки
 
