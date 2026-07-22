@@ -18,4 +18,16 @@ public final class Names {
                 .collect(Collectors.joining(" "));
         return joined.isBlank() ? "" : joined;
     }
+
+    /** «Иванов И.» для строки прогноза. */
+    public static String shortName(String fullName) {
+        if (fullName == null || fullName.isBlank()) {
+            return "";
+        }
+        String[] parts = fullName.trim().split("\\s+");
+        if (parts.length == 1) {
+            return parts[0];
+        }
+        return parts[0] + " " + parts[1].charAt(0) + ".";
+    }
 }

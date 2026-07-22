@@ -24,4 +24,15 @@ public interface ParticipationRepository extends JpaRepository<Participation, Lo
             ORDER BY t.startsAt DESC
             """)
     List<LastTournamentView> findLastTournaments(@Param("playerId") Long playerId, Pageable pageable);
+
+    /** Турниры, где участвовали оба игрока — для lazy-fetch gamesd. */
+    @Query("""
+            SELECT pa1.tournamentId
+            FROM Participation pa1, Participation pa2
+            WHERE pa1.playerId = :playerA
+              AND pa2.playerId = :playerB
+              AND pa1.tournamentId = pa2.tournamentId
+            ORDER BY pa1.tournamentId DESC
+            """)
+    List<Long> findCommonTournamentIds(@Param("playerA") long playerA, @Param("playerB") long playerB);
 }

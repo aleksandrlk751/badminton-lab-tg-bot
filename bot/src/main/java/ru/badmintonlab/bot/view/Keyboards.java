@@ -75,6 +75,36 @@ public class Keyboards {
         return InlineKeyboardMarkup.builder().keyboard(rows).build();
     }
 
+    public InlineKeyboardMarkup h2hSelectA(List<PlayerSearchResult> results) {
+        List<InlineKeyboardRow> rows = new ArrayList<>();
+        for (PlayerSearchResult r : results) {
+            rows.add(new InlineKeyboardRow(
+                    button(SearchButtonLabel.format(r), CallbackData.h2hSelectA(r.playerId()))));
+        }
+        return InlineKeyboardMarkup.builder().keyboard(rows).build();
+    }
+
+    public InlineKeyboardMarkup h2hSelectB(long playerAId, List<PlayerSearchResult> results) {
+        List<InlineKeyboardRow> rows = new ArrayList<>();
+        for (PlayerSearchResult r : results) {
+            rows.add(new InlineKeyboardRow(
+                    button(SearchButtonLabel.format(r), CallbackData.h2hSelectB(playerAId, r.playerId()))));
+        }
+        return InlineKeyboardMarkup.builder().keyboard(rows).build();
+    }
+
+    public InlineKeyboardMarkup h2hResult(long playerAId, boolean fromMenu) {
+        List<InlineKeyboardRow> rows = new ArrayList<>();
+        rows.add(new InlineKeyboardRow(
+                button("Изменить соперника", CallbackData.h2hChangeOpponent(playerAId))));
+        if (fromMenu) {
+            rows.add(new InlineKeyboardRow(button("⬅️ В меню", CallbackData.MENU_MAIN)));
+        } else {
+            rows.add(new InlineKeyboardRow(button("⬅️ К карточке", CallbackData.card(playerAId))));
+        }
+        return InlineKeyboardMarkup.builder().keyboard(rows).build();
+    }
+
     private InlineKeyboardButton button(String text, String callbackData) {
         return InlineKeyboardButton.builder()
                 .text(text)

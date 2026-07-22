@@ -28,7 +28,7 @@ import java.util.Optional;
  * Сборка карточки игрока: профиль, рейтинги S/D, последний турнир.
  */
 @Service
-public class PlayerCardService {
+public class PlayerCardService implements PlayerCardLoader {
 
     private static final ZoneId MOSCOW = ZoneId.of("Europe/Moscow");
     private static final List<Discipline> CARD_DISCIPLINES = List.of(Discipline.S, Discipline.D);

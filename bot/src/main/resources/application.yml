@@ -19,3 +19,9 @@ management:
     web:
       exposure:
         include: health,info
+
+badminton-lab:
+  parser:
+    base-url: https://badminton4u.ru/
+    user-agent: BadmintonLabBot/0.1 (+contact)
+    max-rps: 5

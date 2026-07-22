@@ -1,11 +1,13 @@
 package ru.badmintonlab.bot.view;
 
 import org.springframework.stereotype.Component;
+import ru.badmintonlab.bot.model.H2hResult;
 import ru.badmintonlab.bot.model.LastTournamentInfo;
 import ru.badmintonlab.bot.model.PlayerCard;
 import ru.badmintonlab.bot.model.RatingLine;
 import ru.badmintonlab.bot.model.RivalRow;
 import ru.badmintonlab.bot.model.RivalsPage;
+import ru.badmintonlab.bot.util.Names;
 import ru.badmintonlab.bot.util.ProfileLinks;
 
 import java.math.BigDecimal;
@@ -13,6 +15,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Формирование текстов сообщений бота (parse mode = HTML).
@@ -55,8 +58,135 @@ public class Texts {
                 + "• В базе только игроки Москвы и МО за последние 3 года";
     }
 
-    public String h2hStub() {
-        return "Сравнение игроков (H2H) — скоро.";
+    public String h2hStep1() {
+        return """
+                🆚 <b>H2H · шаг 1/2</b>
+
+                Введите фамилию или ник первого игрока:""";
+    }
+
+    public String h2hStep2(String playerFullName, long playerId, String nick) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("🆚 <b>H2H · шаг 2/2</b>\n\n");
+        appendPlayerHeader(sb, playerId, playerFullName, nick);
+        sb.append("\nВведите фамилию или ник второго игрока:");
+        return sb.toString();
+    }
+
+    public String h2hSamePlayer() {
+        return "Выберите другого игрока — нельзя сравнить игрока с самим собой.";
+    }
+
+    public String h2hResult(H2hResult result) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("🆚 <b>H2H</b>\n\n");
+        appendH2hPlayerLine(sb, result.playerA());
+        sb.append("  vs  ");
+        appendH2hPlayerLineInline(sb, result.playerB());
+        sb.append("\n\n");
+
+        if (result.hadMeetings()) {
+            int total = result.winsA() + result.winsB();
+            int pct = Math.round(result.winsA() * 100f / total);
+            sb.append("<b>Встречи</b>           ")
+                    .append(result.winsA()).append("–").append(result.winsB())
+                    .append(" (").append(pct).append("%)\n");
+        } else {
+            sb.append("<b>Встречи</b>           не было\n");
+        }
+        sb.append("<b>Форма</b>             ")
+                .append(formatForm(result.formA())).append(" / ")
+                .append(formatForm(result.formB())).append('\n');
+
+        appendForecast(sb, result);
+        appendRecentMatches(sb, result);
+        return sb.toString().trim();
+    }
+
+    private void appendH2hPlayerLine(StringBuilder sb, H2hResult.H2hPlayerSide side) {
+        appendPlayerHeader(sb, side.playerId(), side.fullName(), side.nick());
+        appendRatingsInline(sb, side.ratingS(), side.ratingD());
+    }
+
+    private void appendH2hPlayerLineInline(StringBuilder sb, H2hResult.H2hPlayerSide side) {
+        if (side.fullName() != null && !side.fullName().isBlank()) {
+            sb.append("<b>").append(escape(side.fullName())).append("</b>");
+        } else {
+            sb.append("<b>").append(playerLink(side.playerId(), side.nick())).append("</b>");
+        }
+        appendRatingsInline(sb, side.ratingS(), side.ratingD());
+    }
+
+    private void appendRatingsInline(StringBuilder sb, BigDecimal ratingS, BigDecimal ratingD) {
+        sb.append('\n');
+        if (ratingS != null) {
+            sb.append(MessageEmoji.SINGLE).append(' ').append(formatRating(ratingS)).append("  ");
+        }
+        if (ratingD != null) {
+            sb.append(MessageEmoji.DOUBLE).append(' ').append(formatRating(ratingD));
+        }
+    }
+
+    private void appendForecast(StringBuilder sb, H2hResult result) {
+        sb.append('\n');
+        if (result.hadMeetings()) {
+            sb.append("<b>Прогноз</b>\n");
+        } else {
+            sb.append("<b>Прогноз (по рейтингу и форме)</b>\n");
+        }
+        double pA = result.forecast().probabilityA();
+        String favoriteName;
+        int pct;
+        if (pA >= 0.5) {
+            favoriteName = Names.shortName(result.playerA().fullName());
+            if (favoriteName.isBlank()) {
+                favoriteName = result.playerA().nick() != null ? result.playerA().nick()
+                        : String.valueOf(result.playerA().playerId());
+            }
+            pct = (int) Math.round(pA * 100);
+        } else {
+            favoriteName = Names.shortName(result.playerB().fullName());
+            if (favoriteName.isBlank()) {
+                favoriteName = result.playerB().nick() != null ? result.playerB().nick()
+                        : String.valueOf(result.playerB().playerId());
+            }
+            pct = (int) Math.round((1.0 - pA) * 100);
+        }
+        sb.append("Фаворит: ").append(escape(favoriteName)).append(" (≈").append(pct).append("%)");
+    }
+
+    private void appendRecentMatches(StringBuilder sb, H2hResult result) {
+        if (result.recentMatches().isEmpty()) {
+            return;
+        }
+        sb.append("\n\n<b>Последние встречи</b>\n");
+        for (H2hResult.H2hMatchLine line : result.recentMatches()) {
+            sb.append(line.date().format(DATE)).append(" · ")
+                    .append(escape(line.tournamentName())).append(" · ")
+                    .append(escape(line.scoreSets()));
+            if (line.ratingDelta() != null) {
+                sb.append(" · Δ ").append(formatSignedDelta(line.ratingDelta()));
+            }
+            sb.append('\n');
+        }
+    }
+
+    private static String formatForm(double form) {
+        return String.format(Locale.US, "%+.1f", form);
+    }
+
+    private static String formatSignedDelta(BigDecimal delta) {
+        if (delta == null) {
+            return "0";
+        }
+        BigDecimal stripped = delta.stripTrailingZeros();
+        String num = stripped.scale() <= 0
+                ? stripped.toBigInteger().toString()
+                : stripped.toPlainString();
+        if (delta.signum() > 0) {
+            return "+" + num;
+        }
+        return num;
     }
 
     public String historyStub() {

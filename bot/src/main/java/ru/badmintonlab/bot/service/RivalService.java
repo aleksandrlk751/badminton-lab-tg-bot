@@ -19,7 +19,7 @@ import java.util.Set;
  * Экран «Соперники»: фильтр «Все» (сумма W–L) или разряд, пагинация.
  */
 @Service
-public class RivalService {
+public class RivalService implements RivalLookup {
 
     public static final int PAGE_SIZE = 8;
 

@@ -43,6 +43,11 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
+                <groupId>ru.badmintonlab</groupId>
+                <artifactId>worker</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.jsoup</groupId>
                 <artifactId>jsoup</artifactId>
                 <version>${jsoup.version}</version>

@@ -20,7 +20,7 @@ import java.util.Map;
  * Нечёткий поиск игрока по нику/ФИО (этап 4).
  */
 @Service
-public class PlayerSearchService {
+public class PlayerSearchService implements PlayerSearchOperations {
 
     public static final int MIN_QUERY_LENGTH = 3;
     public static final int MAX_RESULTS = 10;

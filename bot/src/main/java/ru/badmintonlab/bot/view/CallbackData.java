@@ -19,8 +19,12 @@ public final class CallbackData {
     public static final String CARD = "card";      // card:{playerId}
     public static final String RIVALS = "rv";       // rv:{playerId} — дисциплина по умолчанию, стр. 0
     public static final String RIVALS_PAGE = "rvp"; // rvp:{playerId}:{discipline}:{page}
-    public static final String H2H = "h2h";         // h2h:{playerId} — заглушка (этап 5)
-    public static final String HISTORY = "hist";    // hist:{playerId} — заглушка (этап 6)
+    public static final String H2H = "h2h";         // h2h:{playerId} — с карточки, шаг 2
+    public static final String H2H_SELECT_A = "h2s1"; // h2s1:{playerId}
+    public static final String H2H_SELECT_B = "h2s2"; // h2s2:{playerA}:{playerB}
+    public static final String H2H_CHANGE = "h2c";    // h2c:{playerA}
+    public static final String MENU_MAIN = "menu:main";
+    public static final String HISTORY = "hist";    // hist:{playerId} — заглушка (этап 7)
 
     public static final String NOOP = "noop";
 
@@ -49,6 +53,18 @@ public final class CallbackData {
 
     public static String h2h(long playerId) {
         return H2H + SEP + playerId;
+    }
+
+    public static String h2hSelectA(long playerId) {
+        return H2H_SELECT_A + SEP + playerId;
+    }
+
+    public static String h2hSelectB(long playerAId, long playerBId) {
+        return H2H_SELECT_B + SEP + playerAId + SEP + playerBId;
+    }
+
+    public static String h2hChangeOpponent(long playerAId) {
+        return H2H_CHANGE + SEP + playerAId;
     }
 
     public static String history(long playerId) {

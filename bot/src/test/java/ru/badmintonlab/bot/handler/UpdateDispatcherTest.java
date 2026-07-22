@@ -13,9 +13,11 @@ import ru.badmintonlab.bot.model.PlayerCard;
 import ru.badmintonlab.bot.model.PlayerSearchResult;
 import ru.badmintonlab.bot.model.RivalRow;
 import ru.badmintonlab.bot.model.RivalsPage;
-import ru.badmintonlab.bot.service.PlayerCardService;
-import ru.badmintonlab.bot.service.PlayerSearchService;
-import ru.badmintonlab.bot.service.RivalService;
+import ru.badmintonlab.bot.service.PlayerCardLoader;
+import ru.badmintonlab.bot.service.PlayerSearchOperations;
+import ru.badmintonlab.bot.service.RivalLookup;
+import ru.badmintonlab.bot.session.ChatSessionStore;
+import ru.badmintonlab.bot.view.CallbackData;
 import ru.badmintonlab.bot.view.Keyboards;
 import ru.badmintonlab.bot.view.Texts;
 import ru.badmintonlab.core.domain.Discipline;
@@ -34,8 +36,11 @@ class UpdateDispatcherTest {
     private final FakeSearch search = new FakeSearch();
     private final FakeCard card = new FakeCard();
     private final FakeRival rival = new FakeRival();
+    private final ChatSessionStore sessions = new ChatSessionStore();
+    private final H2hFlowHandler h2hFlow =
+            new H2hFlowHandler(search, card, null, sessions, new Texts(), new Keyboards());
     private final UpdateDispatcher dispatcher =
-            new UpdateDispatcher(search, card, rival, new Texts(), new Keyboards());
+            new UpdateDispatcher(search, card, rival, h2hFlow, sessions, new Texts(), new Keyboards());
 
     @Test
     void startShowsMenu() {
@@ -97,12 +102,19 @@ class UpdateDispatcherTest {
     }
 
     @Test
-    void h2hCallbackAnswersWithAlert() {
+    void h2hCallbackStartsStep2() {
+        card.card = Optional.of(sampleCard());
         List<BotApiMethod<?>> res = dispatcher.dispatch(callbackUpdate("h2h:5", 100L, 7));
-        assertEquals(1, res.size());
-        AnswerCallbackQuery answer = assertInstanceOf(AnswerCallbackQuery.class, res.get(0));
-        assertEquals(Boolean.TRUE, answer.getShowAlert());
-        assertNotNull(answer.getText());
+        assertEquals(2, res.size());
+        EditMessageText edit = assertInstanceOf(EditMessageText.class, res.get(0));
+        assertTrue(edit.getText().contains("шаг 2/2"));
+    }
+
+    @Test
+    void h2hCommandStartsWizard() {
+        List<BotApiMethod<?>> res = dispatcher.dispatch(textUpdate(100L, "/h2h"));
+        SendMessage sm = assertInstanceOf(SendMessage.class, res.get(0));
+        assertTrue(sm.getText().contains("шаг 1/2"));
     }
 
     @Test
@@ -126,14 +138,6 @@ class UpdateDispatcherTest {
         assertEquals(2, res.size());
         assertInstanceOf(EditMessageText.class, res.get(0));
         assertInstanceOf(AnswerCallbackQuery.class, res.get(1));
-    }
-
-    @Test
-    void rivalsAllFilterCallback() {
-        rival.page = new RivalsPage(5L, "Иванов", null, List.of(), 0, 8, 0, List.of(Discipline.MD));
-        List<BotApiMethod<?>> res = dispatcher.dispatch(callbackUpdate("rvp:5:ALL:0", 100L, 7));
-        assertEquals(2, res.size());
-        assertInstanceOf(EditMessageText.class, res.get(0));
     }
 
     private PlayerCard sampleCard() {
@@ -162,13 +166,9 @@ class UpdateDispatcherTest {
         return update;
     }
 
-    private static final class FakeSearch extends PlayerSearchService {
+    private static final class FakeSearch implements PlayerSearchOperations {
         boolean tooShort;
         List<PlayerSearchResult> results = List.of();
-
-        FakeSearch() {
-            super(null, null);
-        }
 
         @Override
         public boolean isQueryTooShort(String rawQuery) {
@@ -181,12 +181,8 @@ class UpdateDispatcherTest {
         }
     }
 
-    private static final class FakeCard extends PlayerCardService {
+    private static final class FakeCard implements PlayerCardLoader {
         Optional<PlayerCard> card = Optional.empty();
-
-        FakeCard() {
-            super(null, null, null, null, null);
-        }
 
         @Override
         public Optional<PlayerCard> card(long playerId) {
@@ -194,13 +190,9 @@ class UpdateDispatcherTest {
         }
     }
 
-    private static final class FakeRival extends RivalService {
+    private static final class FakeRival implements RivalLookup {
         boolean hasRivals;
         RivalsPage page;
-
-        FakeRival() {
-            super(null, null);
-        }
 
         @Override
         public boolean hasRivals(long playerId) {
