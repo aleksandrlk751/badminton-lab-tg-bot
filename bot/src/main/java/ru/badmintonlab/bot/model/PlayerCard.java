@@ -13,6 +13,7 @@ public record PlayerCard(
         String fullName,
         String city,
         List<RatingLine> ratings,
+        Double form,
         LastTournamentInfo lastTournament,
         LocalDate snapshotDate
 ) {

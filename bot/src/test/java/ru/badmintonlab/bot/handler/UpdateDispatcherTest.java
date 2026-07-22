@@ -141,7 +141,7 @@ class UpdateDispatcherTest {
     }
 
     private PlayerCard sampleCard() {
-        return new PlayerCard(5L, "Rocket", "Иванов Иван", "Москва", List.of(), null, null);
+        return new PlayerCard(5L, "Rocket", "Иванов Иван", "Москва", List.of(), null, null, null);
     }
 
     private Update textUpdate(long chatId, String text) {

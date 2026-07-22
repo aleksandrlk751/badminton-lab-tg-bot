@@ -17,6 +17,8 @@ public final class MessageEmoji {
     public static final String LOSS = "\uD83D\uDD34";
     /** Доля побед, %. */
     public static final String WIN_RATE = "\uD83D\uDCCA";
+    /** Форма игрока (метрика Form). */
+    public static final String FORM = "\uD83D\uDC4A";
 
     private MessageEmoji() {
     }

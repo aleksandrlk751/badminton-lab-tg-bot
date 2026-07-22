@@ -22,8 +22,8 @@ class FormServiceTest {
     }
 
     @Test
-    void freshDeltaKeepsFullValue() {
-        assertEquals(10.0, service.form(NOW, List.of(new RatingDeltaEvent(NOW, 10.0))), 1e-9);
+    void freshDeltaUsesEarlyDecayMax() {
+        assertEquals(8.0, service.form(NOW, List.of(new RatingDeltaEvent(NOW, 10.0))), 1e-9);
     }
 
     @Test
@@ -34,11 +34,11 @@ class FormServiceTest {
 
     @Test
     void signedDeltasSumWithFreshness() {
-        // свежая победа +12 (вес 1) и поражение -8 два периода назад (вес 0.25) → 12 - 2 = 10
+        // свежая победа +12 (вес 0.8) и поражение -8 два периода назад (вес 0.25) → 9.6 - 2 = 7.6
         List<RatingDeltaEvent> events = List.of(
                 new RatingDeltaEvent(NOW, 12.0),
                 new RatingDeltaEvent(NOW.minus(HALF_LIFE.multipliedBy(2)), -8.0));
-        assertEquals(10.0, service.form(NOW, events), 1e-9);
+        assertEquals(7.6, service.form(NOW, events), 1e-9);
     }
 
     @Test

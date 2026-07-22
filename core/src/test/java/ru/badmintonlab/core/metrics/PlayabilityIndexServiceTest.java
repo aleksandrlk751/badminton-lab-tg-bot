@@ -21,8 +21,8 @@ class PlayabilityIndexServiceTest {
     }
 
     @Test
-    void meetingAtReferenceHasFullWeight() {
-        assertEquals(1.0, service.index(NOW, List.of(NOW)), 1e-9);
+    void meetingAtReferenceHasEarlyDecayMaxWeight() {
+        assertEquals(0.8, service.index(NOW, List.of(NOW)), 1e-9);
     }
 
     @Test
@@ -33,18 +33,17 @@ class PlayabilityIndexServiceTest {
 
     @Test
     void weightsAccumulateAcrossMeetings() {
-        // сейчас (1.0) + один период полураспада назад (0.5) + два периода назад (0.25) = 1.75
+        // сейчас (0.8) + один период полураспада назад (0.5) + два периода назад (0.25) = 1.55
         List<Instant> meetings = List.of(
                 NOW,
                 NOW.minus(HALF_LIFE),
                 NOW.minus(HALF_LIFE.multipliedBy(2)));
-        assertEquals(1.75, service.index(NOW, meetings), 1e-9);
+        assertEquals(1.55, service.index(NOW, meetings), 1e-9);
     }
 
     @Test
-    void futureMeetingIsClampedToFullWeight() {
-        // встреча «в будущем» относительно опорной точки не должна давать вес > 1
+    void futureMeetingIsClampedToEarlyDecayMax() {
         Instant future = NOW.plus(HALF_LIFE);
-        assertEquals(1.0, service.index(NOW, List.of(future)), 1e-9);
+        assertEquals(0.8, service.index(NOW, List.of(future)), 1e-9);
     }
 }

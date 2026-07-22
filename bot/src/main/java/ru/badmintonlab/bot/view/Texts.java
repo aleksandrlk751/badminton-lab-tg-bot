@@ -224,6 +224,11 @@ public class Texts {
             }
         }
 
+        if (card.form() != null) {
+            sb.append('\n').append(MessageEmoji.FORM).append("  ")
+                    .append(formatForm(card.form())).append('\n');
+        }
+
         if (card.lastTournament() != null) {
             appendLastTournament(sb, card.lastTournament());
         }

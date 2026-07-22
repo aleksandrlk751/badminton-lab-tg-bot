@@ -28,9 +28,12 @@ public class FormService {
      */
     public double form(Instant reference, Collection<RatingDeltaEvent> events) {
         double halfLife = metrics.halfLifeDays();
+        double earlyMax = metrics.earlyDecayMax().doubleValue();
+        double earlyPower = metrics.earlyDecayPower().doubleValue();
         double sum = 0.0;
         for (RatingDeltaEvent event : events) {
-            sum += event.delta() * MetricMath.decayWeight(reference, event.playedAt(), halfLife);
+            sum += event.delta() * MetricMath.decayWeight(
+                    reference, event.playedAt(), halfLife, earlyMax, earlyPower);
         }
         return sum;
     }

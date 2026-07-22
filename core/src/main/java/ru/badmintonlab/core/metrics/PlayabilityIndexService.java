@@ -8,7 +8,7 @@ import java.util.Collection;
 
 /**
  * Индекс сыгранности {@code S} (§2.1 {@code docs/FORMULAR.md}):
- * <pre>S = Σ_i 0.5^(Δt_i / H)</pre>
+ * <pre>S = Σ_i w(Δt_i)</pre>
  * Сумма весов свежести по каждой встрече. Применяется к соперникам (H2H) и партнёрам
  * (совместные парные турниры). Период полураспада {@code H} — из {@link MetricsProperties}.
  */
@@ -27,9 +27,11 @@ public class PlayabilityIndexService {
      */
     public double index(Instant reference, Collection<Instant> meetingTimes) {
         double halfLife = metrics.halfLifeDays();
+        double earlyMax = metrics.earlyDecayMax().doubleValue();
+        double earlyPower = metrics.earlyDecayPower().doubleValue();
         double sum = 0.0;
         for (Instant meeting : meetingTimes) {
-            sum += MetricMath.decayWeight(reference, meeting, halfLife);
+            sum += MetricMath.decayWeight(reference, meeting, halfLife, earlyMax, earlyPower);
         }
         return sum;
     }

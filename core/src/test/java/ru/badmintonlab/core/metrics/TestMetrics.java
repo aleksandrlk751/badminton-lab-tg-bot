@@ -10,10 +10,12 @@ final class TestMetrics {
     private TestMetrics() {
     }
 
-    /** Значения по умолчанию: H=180, k=0.5, S_ref=1.0, Bmax=20.0, S0=1.0, w=0.4/0.3/0.3, D_scale=10, T=12. */
+    /** Значения по умолчанию: H=180, W_max=0.8, α=0.5, k=0.5, S_ref=1.0, Bmax=20.0, S0=1.0, w=0.4/0.3/0.3, D_scale=10, T=12. */
     static MetricsProperties defaults() {
         return new MetricsProperties(
                 180,
+                new BigDecimal("0.8"),
+                new BigDecimal("0.5"),
                 new BigDecimal("0.5"),
                 new BigDecimal("1.0"),
                 new BigDecimal("20.0"),

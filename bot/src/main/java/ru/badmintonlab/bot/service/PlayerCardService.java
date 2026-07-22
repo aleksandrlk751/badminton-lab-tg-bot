@@ -38,17 +38,20 @@ public class PlayerCardService implements PlayerCardLoader {
     private final ParticipationRepository participationRepository;
     private final MatchPlayerRepository matchPlayerRepository;
     private final SnapshotInfoService snapshotInfoService;
+    private final PlayerFormService playerFormService;
 
     public PlayerCardService(PlayerRepository playerRepository,
                              PlayerRatingRepository playerRatingRepository,
                              ParticipationRepository participationRepository,
                              MatchPlayerRepository matchPlayerRepository,
-                             SnapshotInfoService snapshotInfoService) {
+                             SnapshotInfoService snapshotInfoService,
+                             PlayerFormService playerFormService) {
         this.playerRepository = playerRepository;
         this.playerRatingRepository = playerRatingRepository;
         this.participationRepository = participationRepository;
         this.matchPlayerRepository = matchPlayerRepository;
         this.snapshotInfoService = snapshotInfoService;
+        this.playerFormService = playerFormService;
     }
 
     @Transactional(readOnly = true)
@@ -63,8 +66,13 @@ public class PlayerCardService implements PlayerCardLoader {
                 Names.fullName(p.getLastName(), p.getFirstName(), p.getPatronymic()),
                 p.getCity(),
                 ratings(p.getId()),
+                formValue(p.getId()),
                 lastTournament(p.getId()),
                 snapshotInfoService.lastSnapshotDate().orElse(null));
+    }
+
+    private Double formValue(long playerId) {
+        return playerFormService.formForCard(playerId);
     }
 
     private List<RatingLine> ratings(long playerId) {

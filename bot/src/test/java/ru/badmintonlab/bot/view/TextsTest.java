@@ -43,6 +43,7 @@ class TextsTest {
                 "Москва",
                 List.of(new RatingLine(Discipline.S, new BigDecimal("320.0")),
                         new RatingLine(Discipline.D, new BigDecimal("535.0"))),
+                1.2,
                 new LastTournamentInfo("Кубок LAB", LocalDate.of(2026, 6, 15), (short) 2, "2-е место"),
                 LocalDate.of(2026, 7, 20));
 
@@ -54,6 +55,7 @@ class TextsTest {
         assertTrue(text.contains(MessageEmoji.SINGLE + "  320"), text);
         assertFalse(text.contains("<code>"), text);
         assertTrue(text.contains(MessageEmoji.DOUBLE + "  535"), text);
+        assertTrue(text.contains(MessageEmoji.FORM + "  +1.2"), text);
         assertTrue(text.contains("2-е место"), text);
         assertFalse(text.contains("Данные на"), text);
     }

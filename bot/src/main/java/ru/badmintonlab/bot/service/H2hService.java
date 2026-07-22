@@ -10,23 +10,18 @@ import ru.badmintonlab.core.entity.Player;
 import ru.badmintonlab.core.entity.PlayerRating;
 import ru.badmintonlab.core.metrics.ForecastResult;
 import ru.badmintonlab.core.metrics.ForecastService;
-import ru.badmintonlab.core.metrics.FormService;
 import ru.badmintonlab.core.metrics.PlayabilityIndexService;
-import ru.badmintonlab.core.metrics.RatingDeltaEvent;
 import ru.badmintonlab.core.repository.H2hRepository;
 import ru.badmintonlab.core.repository.PlayerRatingRepository;
 import ru.badmintonlab.core.repository.PlayerRepository;
 import ru.badmintonlab.core.repository.projection.H2hMatchView;
-import ru.badmintonlab.core.repository.projection.RatingDeltaView;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * Head-to-head двух игроков: W-L, последние матчи, Form, прогноз P3 (рейтинг 👥 D).
@@ -36,14 +31,12 @@ public class H2hService {
 
     private static final ZoneId MOSCOW = ZoneId.of("Europe/Moscow");
     private static final int RECENT_LIMIT = 5;
-    private static final Set<Discipline> PAIR_DISCIPLINES =
-            EnumSet.of(Discipline.D, Discipline.MD, Discipline.WD, Discipline.XD);
 
     private final PlayerRepository playerRepository;
     private final PlayerRatingRepository playerRatingRepository;
     private final H2hRepository h2hRepository;
     private final H2hLazyFetchService lazyFetchService;
-    private final FormService formService;
+    private final PlayerFormService playerFormService;
     private final PlayabilityIndexService playabilityIndexService;
     private final ForecastService forecastService;
 
@@ -51,14 +44,14 @@ public class H2hService {
                       PlayerRatingRepository playerRatingRepository,
                       H2hRepository h2hRepository,
                       H2hLazyFetchService lazyFetchService,
-                      FormService formService,
+                      PlayerFormService playerFormService,
                       PlayabilityIndexService playabilityIndexService,
                       ForecastService forecastService) {
         this.playerRepository = playerRepository;
         this.playerRatingRepository = playerRatingRepository;
         this.h2hRepository = h2hRepository;
         this.lazyFetchService = lazyFetchService;
-        this.formService = formService;
+        this.playerFormService = playerFormService;
         this.playabilityIndexService = playabilityIndexService;
         this.forecastService = forecastService;
     }
@@ -93,8 +86,8 @@ public class H2hService {
             }
         }
 
-        double formA = form(playerAId);
-        double formB = form(playerBId);
+        double formA = playerFormService.form(playerAId);
+        double formB = playerFormService.form(playerBId);
         double s = playabilityIndexService.index(meetingTimes);
         double ratingA = ratingOrZero(playerAId, Discipline.D);
         double ratingB = ratingOrZero(playerBId, Discipline.D);
@@ -119,17 +112,6 @@ public class H2hService {
             matches = h2hRepository.findHeadToHead(playerAId, playerBId);
         }
         return matches;
-    }
-
-    private double form(long playerId) {
-        List<RatingDeltaEvent> events = h2hRepository.findRatingDeltas(playerId, PAIR_DISCIPLINES).stream()
-                .map(this::toDeltaEvent)
-                .toList();
-        return formService.form(events);
-    }
-
-    private RatingDeltaEvent toDeltaEvent(RatingDeltaView view) {
-        return new RatingDeltaEvent(view.getPlayedAt(), view.getRatingDelta().doubleValue());
     }
 
     private H2hResult.H2hMatchLine toMatchLine(H2hMatchView m, boolean playerAWon) {
