@@ -81,15 +81,15 @@ class UpdateDispatcherTest {
     }
 
     @Test
-    void cardCallbackEditsMessage() {
+    void cardCallbackSendsNewMessage() {
         card.card = Optional.of(sampleCard());
         rival.hasRivals = true;
 
         List<BotApiMethod<?>> res = dispatcher.dispatch(callbackUpdate("card:5", 100L, 7));
 
         assertEquals(2, res.size());
-        EditMessageText edit = assertInstanceOf(EditMessageText.class, res.get(0));
-        assertTrue(edit.getText().contains("Иванов Иван"));
+        SendMessage sm = assertInstanceOf(SendMessage.class, res.get(0));
+        assertTrue(sm.getText().contains("Иванов Иван"));
         assertInstanceOf(AnswerCallbackQuery.class, res.get(1));
     }
 
@@ -97,8 +97,8 @@ class UpdateDispatcherTest {
     void cardCallbackNotFound() {
         card.card = Optional.empty();
         List<BotApiMethod<?>> res = dispatcher.dispatch(callbackUpdate("card:5", 100L, 7));
-        EditMessageText edit = assertInstanceOf(EditMessageText.class, res.get(0));
-        assertTrue(edit.getText().contains("не найден"));
+        SendMessage sm = assertInstanceOf(SendMessage.class, res.get(0));
+        assertTrue(sm.getText().contains("не найден"));
     }
 
     @Test
@@ -124,6 +124,36 @@ class UpdateDispatcherTest {
         assertEquals(1, res.size());
         AnswerCallbackQuery answer = assertInstanceOf(AnswerCallbackQuery.class, res.get(0));
         assertTrue(answer.getText().contains("Соперников пока нет"));
+    }
+
+    @Test
+    void rivalsDefaultSendsNewMessage() {
+        rival.hasRivals = true;
+        rival.page = new RivalsPage(5L, "Иванов",
+                null,
+                List.of(new RivalRow(2L, "Foe", "Петров", "Москва", 2, 0)),
+                0, 8, 1, List.of(Discipline.MD));
+
+        List<BotApiMethod<?>> res = dispatcher.dispatch(callbackUpdate("rv:5", 100L, 7));
+
+        assertEquals(2, res.size());
+        SendMessage sm = assertInstanceOf(SendMessage.class, res.get(0));
+        assertTrue(sm.getText().contains("Соперники"));
+        assertInstanceOf(AnswerCallbackQuery.class, res.get(1));
+    }
+
+    @Test
+    void h2hChangeOpponentSendsNewMessage() {
+        card.card = Optional.of(sampleCard());
+        sessions.put(100L, new ru.badmintonlab.bot.session.ChatSession(
+                ru.badmintonlab.bot.session.ChatSession.Mode.H2H_RESULT, 5L, 7, false));
+
+        List<BotApiMethod<?>> res = dispatcher.dispatch(callbackUpdate("h2c:5", 100L, 7));
+
+        assertEquals(2, res.size());
+        SendMessage sm = assertInstanceOf(SendMessage.class, res.get(0));
+        assertTrue(sm.getText().contains("шаг 2/2"));
+        assertInstanceOf(AnswerCallbackQuery.class, res.get(1));
     }
 
     @Test

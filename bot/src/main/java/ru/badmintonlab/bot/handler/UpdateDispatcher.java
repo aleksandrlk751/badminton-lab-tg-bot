@@ -185,17 +185,17 @@ public class UpdateDispatcher {
     }
 
     private void handleCard(long playerId, Long chatId, Integer messageId, List<BotApiMethod<?>> out) {
-        if (chatId == null || messageId == null) {
+        if (chatId == null) {
             return;
         }
         sessionStore.clear(chatId);
         Optional<PlayerCard> card = cardService.card(playerId);
         if (card.isEmpty()) {
-            out.add(edit(chatId, messageId, "Игрок не найден.", null));
+            out.add(send(chatId, "Игрок не найден.", null));
             return;
         }
         boolean hasRivals = rivalService.hasRivals(playerId);
-        out.add(edit(chatId, messageId, texts.card(card.get()), keyboards.card(card.get(), hasRivals)));
+        out.add(send(chatId, texts.card(card.get()), keyboards.card(card.get(), hasRivals)));
     }
 
     private String handleRivalsDefault(long playerId, Long chatId, Integer messageId,
@@ -207,7 +207,7 @@ public class UpdateDispatcher {
             return "Соперников пока нет.";
         }
         RivalsPage page = rivalService.rivals(playerId, null, 0);
-        out.add(edit(chatId, messageId, texts.rivals(page), keyboards.rivals(page)));
+        out.add(send(chatId, texts.rivals(page), keyboards.rivals(page)));
         return null;
     }
 

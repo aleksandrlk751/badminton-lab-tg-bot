@@ -132,9 +132,9 @@ public class H2hFlowHandler {
     private List<BotApiMethod<?>> onChangeOpponent(long chatId, int messageId, long playerAId) {
         ChatSession prev = sessionStore.get(chatId).orElse(
                 new ChatSession(ChatSession.Mode.H2H_STEP2, playerAId, messageId, false));
-        ChatSession next = new ChatSession(ChatSession.Mode.H2H_CHANGE_OPPONENT, playerAId, messageId, prev.fromMenu());
+        ChatSession next = new ChatSession(ChatSession.Mode.H2H_CHANGE_OPPONENT, playerAId, 0, prev.fromMenu());
         sessionStore.put(chatId, next);
-        return editFlow(chatId, messageId, step2Text(playerAId), null);
+        return List.of(send(chatId, step2Text(playerAId), null));
     }
 
     private List<BotApiMethod<?>> showResult(long chatId, Integer messageId,
