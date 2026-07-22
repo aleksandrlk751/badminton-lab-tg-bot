@@ -22,7 +22,7 @@
 ## Обзор этапов
 
 ```
-[0 Spike ✓] → [1 Каркас ✓] → [2 Worker слепок ✓] → [3 Метрики] → [4 Bot shell]
+[0 Spike ✓] → [1 Каркас ✓] → [2 Worker слепок ✓] → [3 Метрики ✓] → [4 Bot shell]
     → [5 H2H пары] → [6 График рейтинга] → [7 Партнёры] → [8 VPS деплой]
                                                               → [9+ Roadmap]
 ```
@@ -112,24 +112,36 @@ r77 запускается пользователем (heavy live-scrape).
 
 ---
 
-## Этап 3 — Метрики (core)
+## Этап 3 — Метрики (core) ✓ (реализация)
 
-**Цель:** воспроизводимые расчёты S, Form, P3, score партнёра.
+**Цель:** воспроизводимые расчёты S, Form, P3, рейтинг пары.
 
-**Задачи:**
-- Сервисы в `core` (чистая логика + доступ к БД):
+**Статус:** реализовано (2026-07-22). Чистые расчётные сервисы в пакете `core.metrics`,
+21 unit-тест (синтетика + реальные числа), `mvn clean verify` green.
+
+**Задачи (выполнено):**
+- Сервисы в `core.metrics` (чистая логика, константы из `MetricsProperties`):
   - `PlayabilityIndexService` — S по списку дат встреч.
-  - `FormService` — Form по дельтам с полураспадом.
-  - `ForecastService` — P3 (логистика, Laplace, blend).
-  - `PairRatingService` — (A+B)/2 + бонус S_partner.
-  - `PartnerScoreService` — score 0–100 для подбора (этап 7).
-- Конфиг: `H`, `k`, `S_ref`, `Bmax`, `S0`, `w1..w3`, `D_scale`, `T` месяцев — `application-core.yml`
-  (`badminton-lab.metrics.*` / `MetricsProperties`). Формулы и локализация — [`FORMULAR.md`](FORMULAR.md).
-- Unit-тесты на синтетических данных + 2–3 кейса с реальными числами из fixtures.
+  - `FormService` — Form по дельтам с полураспадом (вход — `RatingDeltaEvent`).
+  - `PairRatingService` — официальный `(A+B)/2` + прогнозный `+ Bmax·(1-0.5^(S_partner/S0))`.
+  - `ForecastService` — P3 (логистика, Laplace, blend); универсален для одиночки и пар,
+    результат — `ForecastResult` (P, P_model, P_h2h, w, R_eff) для показа обоснования.
+  - Общий helper `MetricMath` (затухание по полураспаду, сигмоида).
+- Регистрация бинов: `@ComponentScan("ru.badmintonlab.core.metrics")` в `CoreJpaConfig`
+  (подхватывается worker/bot через `@Import`).
+- Unit-тесты на синтетике + реальные числа (`ForecastServiceTest#combinedRealisticCase` и др.).
+
+**Отложено:**
+- `PartnerScoreService` — на **этап 7** (нет значений `S_ref_partner` и boost `1.2` в конфиге,
+  [`FORMULAR.md`](FORMULAR.md) §3.1 — не выдумываем).
+- Сборка входных данных из БД (H2H-запрос к `Match`, даты/дельты) — на **этап 5**, где потребляется
+  ботом и проверяется на реальном слепке.
+- Testcontainers-интеграция — отложена (как на этапе 2): сервисы этапа 3 — чистая логика,
+  тестируются без БД.
 
 **DoD:**
-- [ ] Формулы совпадают с [`BRIEF.md`](BRIEF.md).
-- [ ] Тесты green без БД (где возможно) + интеграционные с testcontainers Postgres.
+- [x] Формулы совпадают с [`BRIEF.md`](BRIEF.md) / [`FORMULAR.md`](FORMULAR.md).
+- [x] Тесты green без БД. Интеграция с testcontainers Postgres — отложена (см. «Отложено»).
 
 **Оценка:** 4–6 дней.
 
@@ -274,6 +286,7 @@ flowchart LR
 
 ## Следующий шаг
 
-**Этап 3:** метрики в `core` (S, Form, P3, рейтинг/скор пары) — воспроизводимые расчёты поверх слепка.  
-Перед этим при необходимости — полный 3-летний слепок r77 (`SNAPSHOT_MAX_TOURNAMENTS=0`, все дисциплины).
-Локальный запуск слепка — [`README.md`](README.md). Spike-парсер: [`spike-parser.md`](spike-parser.md).
+**Этап 4:** Bot shell — поиск игрока (pg_trgm) и карточка (см. §«Этап 4»). Метрики `core.metrics`
+готовы к потреблению; H2H-сборка из `Match` и прогноз подключаются на **этапе 5**.  
+Для наполнения БД при необходимости — полный 3-летний слепок r77 (`SNAPSHOT_MAX_TOURNAMENTS=0`,
+все дисциплины). Локальный запуск слепка — [`README.md`](README.md).
