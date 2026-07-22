@@ -46,8 +46,9 @@ public class HttpFetcher {
                         .timeout(properties.connectTimeoutMs())
                         .maxBodySize(0)
                         .ignoreContentType(false);
+                // jsoup: .get() всегда выполняет GET (перекрывает .method(...)); для POST нужен .post().
                 if (data != null) {
-                    connection.data(data).method(Connection.Method.POST);
+                    return connection.data(data).post();
                 }
                 return connection.get();
             } catch (HttpStatusException e) {
