@@ -16,7 +16,8 @@ public record SnapshotProperties(
         List<Discipline> disciplines,
         boolean runOnStartup,
         int maxTournaments,
-        boolean scheduledEnabled
+        boolean scheduledEnabled,
+        List<Long> tournamentIds
 ) {
     public SnapshotProperties {
         if (regionCode == null || regionCode.isBlank()) {
@@ -27,6 +28,9 @@ public record SnapshotProperties(
         }
         if (disciplines == null || disciplines.isEmpty()) {
             disciplines = List.of(Discipline.D, Discipline.MD, Discipline.WD, Discipline.XD);
+        }
+        if (tournamentIds == null) {
+            tournamentIds = List.of();
         }
         // maxTournaments <= 0 трактуем как «без лимита» (полный слепок).
     }

@@ -98,6 +98,7 @@ r77 запускается пользователем (heavy live-scrape).
   5. `rival_summary` (вариант C) — **полная пересборка** из БД (`RivalSummaryRebuildService`), идемпотентно.
 - Идемпотентность: upsert по external ID; `snapshot_meta.last_sync_at` + окно.
 - Spring `@Scheduled` (флаг `scheduled-enabled`, cron) + ручной dev-trigger (`run-on-startup`, синхронно).
+- **Точечный re-import** по списку ID (`SNAPSHOT_TOURNAMENT_IDS`) — без полного обхода списка турниров.
 - Метрики прогона (`SnapshotMetrics`): турниры/игроки/матчи/rival/ошибки/длительность (в лог).
 - Регистрация будущих турниров (`TournamentRegistration`, SSR/AJAX) **отложена в этап 7**.
 

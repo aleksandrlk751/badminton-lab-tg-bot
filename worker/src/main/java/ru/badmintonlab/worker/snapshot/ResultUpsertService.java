@@ -28,11 +28,16 @@ public class ResultUpsertService {
     }
 
     @Transactional
-    public void upsert(TournamentResults results, Discipline discipline) {
+    public void upsert(long tournamentId, TournamentResults results, Discipline discipline) {
+        if (results.tournamentId() != tournamentId) {
+            org.slf4j.LoggerFactory.getLogger(ResultUpsertService.class)
+                    .warn("Parsed tournament id {} != ожидаемого {} — используем ожидаемый",
+                            results.tournamentId(), tournamentId);
+        }
         for (TournamentPairResult pair : results.pairs()) {
             Long pairId = pairService.getOrCreate(pair.player1Id(), pair.player2Id(), discipline);
-            upsertParticipation(results.tournamentId(), pair, pair.player1Id(), pair.player1RatingBefore().orElse(null), pairId);
-            upsertParticipation(results.tournamentId(), pair, pair.player2Id(), pair.player2RatingBefore().orElse(null), pairId);
+            upsertParticipation(tournamentId, pair, pair.player1Id(), pair.player1RatingBefore().orElse(null), pairId);
+            upsertParticipation(tournamentId, pair, pair.player2Id(), pair.player2RatingBefore().orElse(null), pairId);
         }
     }
 

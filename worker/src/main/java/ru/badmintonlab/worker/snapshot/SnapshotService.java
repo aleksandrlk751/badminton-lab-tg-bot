@@ -124,6 +124,77 @@ public class SnapshotService {
         return metrics;
     }
 
+    /**
+     * Точечный импорт завершённых турниров по ID (без полного обхода списка).
+     * Идемпотентен: повторный прогон дополняет participation/match, не дублирует матчи.
+     */
+    public SnapshotMetrics runTournamentIds(List<Long> tournamentIds) {
+        if (tournamentIds == null || tournamentIds.isEmpty()) {
+            throw new IllegalArgumentException("tournamentIds must not be empty");
+        }
+        if (!running.compareAndSet(false, true)) {
+            log.warn("Слепок уже выполняется — точечный импорт пропущен");
+            return null;
+        }
+        SnapshotMetrics metrics = new SnapshotMetrics();
+        String region = snapshotProperties.regionCode();
+        ExecutorService pool = Executors.newFixedThreadPool(parserProperties.threads());
+        try {
+            log.info("Точечный импорт: {} турниров, регион={}", tournamentIds.size(), region);
+            List<ParsedTournament> parsed = new ArrayList<>();
+            for (Long id : tournamentIds) {
+                ParsedTournament pt = parseSingleTournament(id, metrics);
+                if (pt != null) {
+                    parsed.add(pt);
+                }
+            }
+            upsertPlayers(parsed, pool, metrics);
+            persistResultsAndMatches(parsed, pool, metrics);
+            metrics.setRivalRows(rivalSummaryRebuildService.rebuild());
+            touchSnapshotMeta(region);
+            log.info("Точечный импорт завершён: {}", metrics);
+        } catch (RuntimeException e) {
+            log.error("Точечный импорт прерван ошибкой: {}", e.toString(), e);
+            throw e;
+        } finally {
+            pool.shutdownNow();
+            running.set(false);
+        }
+        return metrics;
+    }
+
+    private ParsedTournament parseSingleTournament(long id, SnapshotMetrics metrics) {
+        try {
+            var page = client.tournamentPage(id);
+            Discipline discipline = SnapshotSupport.inferDisciplineFromPage(page);
+            TournamentResults results = resultsParser.parse(page);
+            List<PairMatch> matches = gamesParser.parse(client.tournamentGames(id));
+
+            Set<Long> playerIds = new java.util.HashSet<>();
+            results.pairs().forEach(p -> {
+                playerIds.add(p.player1Id());
+                playerIds.add(p.player2Id());
+            });
+            matches.forEach(m -> {
+                m.sideA().forEach(mp -> playerIds.add(mp.playerId()));
+                m.sideB().forEach(mp -> playerIds.add(mp.playerId()));
+            });
+            metrics.incTournament();
+            return new ParsedTournament(id, discipline, results, matches, playerIds);
+        } catch (RuntimeException e) {
+            metrics.incError();
+            log.warn("Ошибка обработки турнира {}: {}", id, e.toString());
+            return null;
+        }
+    }
+
+    private void touchSnapshotMeta(String region) {
+        snapshotMetaRepository.findById(region).ifPresent(meta -> {
+            meta.setLastSyncAt(Instant.now());
+            snapshotMetaRepository.save(meta);
+        });
+    }
+
     private Map<Long, TournamentTask> discoverTournaments(String region, LocalDate from, LocalDate to,
                                                           SnapshotMetrics metrics) {
         Map<Long, TournamentTask> tasks = new LinkedHashMap<>();
@@ -231,8 +302,8 @@ public class SnapshotService {
         for (ParsedTournament pt : parsed) {
             jobs.add(() -> {
                 try {
-                    resultUpsertService.upsert(pt.results(), pt.discipline());
-                    int inserted = matchUpsertService.upsert(pt.matches(), pt.discipline());
+                    resultUpsertService.upsert(pt.id(), pt.results(), pt.discipline());
+                    int inserted = matchUpsertService.upsert(pt.matches(), pt.discipline(), pt.id());
                     metrics.addMatches(inserted);
                 } catch (RuntimeException e) {
                     metrics.incError();

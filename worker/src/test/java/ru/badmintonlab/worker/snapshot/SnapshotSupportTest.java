@@ -32,6 +32,13 @@ class SnapshotSupportTest {
     }
 
     @Test
+    void infersDisciplineFromTournamentPage() {
+        assertEquals(Discipline.D,
+                SnapshotSupport.inferDisciplineFromPage(
+                        ru.badmintonlab.parser.support.HtmlFixtures.load("tournament-completed-12125.html")));
+    }
+
+    @Test
     void mapsParserDisciplineToCore() {
         assertEquals(Discipline.WD, SnapshotSupport.toCore(ru.badmintonlab.parser.model.Discipline.WD));
         assertEquals(Discipline.XD, SnapshotSupport.toCore(ru.badmintonlab.parser.model.Discipline.XD));

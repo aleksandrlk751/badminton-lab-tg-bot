@@ -36,13 +36,18 @@ public class MatchUpsertService {
      * @return число вставленных новых матчей (уже существующие пропущены).
      */
     @Transactional
-    public int upsert(List<PairMatch> matches, Discipline discipline) {
+    public int upsert(List<PairMatch> matches, Discipline discipline, long tournamentId) {
         int inserted = 0;
         for (PairMatch match : matches) {
+            if (match.tournamentId() != tournamentId) {
+                org.slf4j.LoggerFactory.getLogger(MatchUpsertService.class)
+                        .warn("Match externalKey={} parsed tourId {} != ожидаемого {} — используем ожидаемый",
+                                match.externalKey(), match.tournamentId(), tournamentId);
+            }
             if (matchRepository.findBySourceAndExternalKey(SOURCE, match.externalKey()).isPresent()) {
                 continue;
             }
-            Match saved = insertMatch(match, discipline);
+            Match saved = insertMatch(match, discipline, tournamentId);
             insertPlayers(saved.getId(), match.sideA(), MatchSide.A, match.deltaA().orElse(null));
             insertPlayers(saved.getId(), match.sideB(), MatchSide.B, match.deltaB().orElse(null));
             inserted++;
@@ -50,9 +55,9 @@ public class MatchUpsertService {
         return inserted;
     }
 
-    private Match insertMatch(PairMatch match, Discipline discipline) {
+    private Match insertMatch(PairMatch match, Discipline discipline, long tournamentId) {
         Match entity = new Match(
-                match.tournamentId(),
+                tournamentId,
                 discipline,
                 SnapshotSupport.toInstant(match.playedAt()),
                 match.scoreSets(),

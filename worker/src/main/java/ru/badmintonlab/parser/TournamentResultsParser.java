@@ -16,8 +16,6 @@ import java.util.regex.Pattern;
 
 public class TournamentResultsParser {
 
-    private static final Pattern TOURNAMENT_ID = Pattern.compile("tournaments/(\\d+)");
-
     public TournamentResults parse(Document document) {
         long tournamentId = extractTournamentId(document);
         Element table = document.selectFirst("table.tour-doubles");
@@ -26,8 +24,11 @@ public class TournamentResultsParser {
         }
 
         List<TournamentPairResult> pairs = new ArrayList<>();
+        int lastPlace = 0;
         for (Element row : table.select("tbody tr")) {
-            pairs.add(parseRow(row));
+            TournamentPairResult pair = parseRow(row, lastPlace);
+            lastPlace = pair.place();
+            pairs.add(pair);
         }
         return new TournamentResults(tournamentId, pairs);
     }
@@ -40,16 +41,37 @@ public class TournamentResultsParser {
                 return Long.parseLong(matcher.group(1));
             }
         }
-        Element pagesLink = document.selectFirst("p.pages a[href*=tournaments/]");
-        if (pagesLink != null) {
-            return ParseUtils.extractTournamentId(pagesLink.attr("href")).orElseThrow();
+        Element alternateLink = document.selectFirst("link[rel=alternate][href*=/tournaments/]");
+        if (alternateLink != null) {
+            Optional<Long> id = ParseUtils.extractTournamentId(alternateLink.attr("href"));
+            if (id.isPresent()) {
+                return id.get();
+            }
+        }
+        Element resultImage = document.selectFirst("img[src*=/tournaments/][src*=res-]");
+        if (resultImage != null) {
+            Optional<Long> id = ParseUtils.extractTournamentId(resultImage.attr("src"));
+            if (id.isPresent()) {
+                return id.get();
+            }
         }
         throw new IllegalStateException("Tournament id not found");
     }
 
-    private TournamentPairResult parseRow(Element row) {
+    /**
+     * Место из первой колонки; прочерк «-» — lastPlace + 1 (пара без официального места в таблице).
+     */
+    static int resolvePlace(String raw, int lastPlace) {
+        String text = raw.trim();
+        if ("-".equals(text)) {
+            return lastPlace + 1;
+        }
+        return Integer.parseInt(text);
+    }
+
+    private TournamentPairResult parseRow(Element row, int lastPlace) {
         Elements cells = row.select("td");
-        int place = Integer.parseInt(cells.get(0).text().trim());
+        int place = resolvePlace(cells.get(0).text(), lastPlace);
 
         Element pairCell = cells.get(1);
         Elements playerLinks = pairCell.select("a[href*=players/]");

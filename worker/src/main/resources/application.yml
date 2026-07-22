@@ -32,3 +32,4 @@ badminton-lab:
     max-tournaments: ${SNAPSHOT_MAX_TOURNAMENTS:0}
     scheduled-enabled: ${SNAPSHOT_SCHEDULED_ENABLED:false}
     cron: ${SNAPSHOT_CRON:0 0 4 * * *}
+    tournament-ids: ${SNAPSHOT_TOURNAMENT_IDS:}

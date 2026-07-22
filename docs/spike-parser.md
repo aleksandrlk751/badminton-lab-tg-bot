@@ -17,6 +17,9 @@
 |---|---|---|
 | `tournaments-list-r77-pairs.html` | список r77 | парсер списка турниров |
 | `games-tournament-12713.html` | `/gamesd/?tourID=12713` | pair-vs-pair матчи и агрегат соперников |
+| `tournament-completed-12125.html` | `/tournaments/12125` | ID без `addComment` (alternate link) |
+| `tournament-completed-12126.html` | `/tournaments/12126` | место `-` в итоговой таблице |
+| `games-tournament-12125.html` | `/gamesd/?tourID=12125` | re-import эталон (25 матчей) |
 
 ## Сборка и тесты
 
@@ -107,6 +110,14 @@ badminton4u:game:{tournamentId}:{playedAt}:{sortedA}:vs{sortedB}:{scoreSets}:{st
 | **URL** | [tournaments/12713](https://badminton4u.ru/tournaments/12713) → вкладка «результаты» |
 | **Парсер (1 место)** | `19080` + `18870`; рейтинги до `577` / `514`; пара `546`; дельта `+27.3`; матчи `5 (5-0)`; сеты `12 (10-2)` |
 | **Парсер** | всего строк в таблице пар: **12** |
+
+**Краевые случаи (зафиксировано на живых fixtures):**
+
+| Случай | Поведение парсера |
+|---|---|
+| Место `-` в итоговой таблице | `lastPlace + 1` (пара без официального места); fixture `tournament-completed-12126.html` |
+| Нет кнопки `addComment` | ID турнира из `link[rel=alternate]` или `img[src*=/tournaments/…/res-]`; fixture `tournament-completed-12125.html` |
+| Повторная встреча пар (группа → финал) | Два разных `external_key` матча — не ошибка; ограничение `pair` — только партнёрство (два игрока на стороне) |
 
 ### 3. Регистрация пар — `TournamentRegistrationParser`
 

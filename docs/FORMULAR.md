@@ -185,6 +185,7 @@ score      = score_base · 1.2                      # boost только в бл
 | `max-tournaments` | `0` | `SNAPSHOT_MAX_TOURNAMENTS` | `0` = без лимита; `>0` — «дымовой» режим |
 | `scheduled-enabled` | `false` | `SNAPSHOT_SCHEDULED_ENABLED` | Регулярный запуск по cron |
 | `cron` | `0 0 4 * * *` | `SNAPSHOT_CRON` | Расписание (зона Europe/Moscow) |
+| `tournament-ids` | *(пусто)* | `SNAPSHOT_TOURNAMENT_IDS` | Точечный импорт по ID (через запятую); при `run-on-startup=true` заменяет полный слепок |
 
 Варианты сочетаний — [`README.md`](README.md) → «Варианты запуска слепка».
 
