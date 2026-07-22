@@ -106,9 +106,9 @@ copy .env.example .env
 | `.\dev postgres up` | Поднять PostgreSQL (Docker) |
 | `.\dev postgres down` | Остановить PostgreSQL |
 | `.\dev postgres status` | Статус контейнера |
-| `.\dev worker start` | Запустить worker (Flyway + Spring Boot) |
+| `.\dev bot start` | Собрать зависимости + тесты (`mvn -pl bot -am install`), запустить бота |
+| `.\dev worker start` | Собрать зависимости + тесты (`mvn -pl worker -am install`), запустить worker |
 | `.\dev worker stop` | Остановить worker |
-| `.\dev bot start` | Запустить Telegram-бот |
 | `.\dev bot stop` | Остановить бота |
 | `.\dev verify` | `mvnw clean verify` (все модули) |
 | `.\dev test` | Unit-тесты парсера |

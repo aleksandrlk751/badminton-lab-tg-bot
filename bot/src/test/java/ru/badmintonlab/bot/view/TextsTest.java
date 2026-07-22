@@ -51,10 +51,9 @@ class TextsTest {
         assertTrue(text.contains("<b>Иванов Иван</b>"), text);
         assertTrue(text.contains("Rocket</a>"), text);
         assertTrue(text.contains("Москва"), text);
-        assertTrue(text.contains("🆂"), text);
-        assertTrue(text.contains("<code>320</code>"), text);
-        assertTrue(text.contains("🅳"), text);
-        assertTrue(text.contains("<code>535</code>"), text);
+        assertTrue(text.contains(MessageEmoji.SINGLE + "  320"), text);
+        assertFalse(text.contains("<code>"), text);
+        assertTrue(text.contains(MessageEmoji.DOUBLE + "  535"), text);
         assertTrue(text.contains("2-е место"), text);
         assertFalse(text.contains("Данные на"), text);
     }
@@ -83,8 +82,34 @@ class TextsTest {
         assertTrue(text.contains("Соперники"), text);
         assertTrue(text.contains("Все"), text);
         assertTrue(text.contains("Петров Пётр"), text);
-        assertTrue(text.contains("3–1 (75%)"), text);
+        assertFalse(text.contains("Foe"), text);
+        assertTrue(text.contains(MessageEmoji.WIN + "3  " + MessageEmoji.LOSS + "1  "
+                + MessageEmoji.WIN_RATE + "75%"), text);
         assertFalse(text.contains("Москва"), text);
+    }
+
+    @Test
+    void rivalsAlignsStatsInColumn() {
+        RivalsPage page = new RivalsPage(
+                1L,
+                "Иванов Иван",
+                null,
+                List.of(
+                        new RivalRow(2L, null, "Петров Пётр", null, 3, 1),
+                        new RivalRow(3L, null, "Сидорова Анна", null, 2, 2)),
+                0,
+                8,
+                1,
+                List.of(Discipline.MD));
+
+        String text = texts.rivals(page);
+
+        assertTrue(text.contains("<pre>"), text);
+        int petrov = text.indexOf("Петров");
+        int sidorova = text.indexOf("Сидорова");
+        int winPetrov = text.indexOf(MessageEmoji.WIN, petrov);
+        int winSidorova = text.indexOf(MessageEmoji.WIN, sidorova);
+        assertEquals(winPetrov - petrov, winSidorova - sidorova);
     }
 
     @Test

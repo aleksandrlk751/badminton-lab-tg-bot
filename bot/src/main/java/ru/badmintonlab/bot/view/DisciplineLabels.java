@@ -14,4 +14,9 @@ public final class DisciplineLabels {
     public static String label(Discipline discipline) {
         return discipline.name();
     }
+
+    /** Префикс личного рейтинга: 👤 (single) / 👥 (double). */
+    public static String ratingLabel(Discipline discipline) {
+        return MessageEmoji.rating(discipline);
+    }
 }

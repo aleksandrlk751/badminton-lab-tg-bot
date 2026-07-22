@@ -7,11 +7,11 @@ import ru.badmintonlab.bot.model.RatingLine;
 import ru.badmintonlab.bot.model.RivalRow;
 import ru.badmintonlab.bot.model.RivalsPage;
 import ru.badmintonlab.bot.util.ProfileLinks;
-import ru.badmintonlab.core.domain.Discipline;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -21,9 +21,6 @@ import java.util.List;
 public class Texts {
 
     public static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd.MM.yyyy");
-
-    private static final String EMOJI_S = "🆂";
-    private static final String EMOJI_D = "🅳";
 
     public String menu() {
         return """
@@ -41,7 +38,7 @@ public class Texts {
                 <b>Справка</b>
 
                 • 🔍 Найти игрока — введите фамилию или ник (от 3 символов)
-                • Карточка — рейтинги 🆂/🅳, последний турнир, 🤺 соперники
+                • Карточка — рейтинги 👤/👥, последний турнир, 🤺 соперники
                 • 🆚 Сравнить (H2H) — сравнение двух игроков по всем встречам
                 • 📈 История рейтинга — график (скоро)
 
@@ -92,8 +89,8 @@ public class Texts {
         if (!card.ratings().isEmpty()) {
             sb.append("\n\n<b>Рейтинги</b>\n");
             for (RatingLine line : card.ratings()) {
-                sb.append(ratingEmoji(line.discipline())).append("  ")
-                        .append("<code>").append(formatRating(line.rating())).append("</code>\n");
+                sb.append(DisciplineLabels.ratingLabel(line.discipline())).append("  ")
+                        .append(formatRating(line.rating())).append('\n');
             }
         }
 
@@ -139,16 +136,41 @@ public class Texts {
         }
 
         sb.append("\n\n");
-        int index = page.page() * page.pageSize();
-        for (RivalRow row : page.rows()) {
-            index++;
-            sb.append(index).append(". ");
-            appendPlayerInline(sb, row.opponentId(), row.fullName(), row.nick());
-            sb.append("     ").append(wlWithPercent(row.wins(), row.losses())).append("\n");
-        }
+        appendRivalsTable(sb, page);
         sb.append("\nСтр. ").append(page.page() + 1).append("/").append(page.totalPages())
                 .append(" · всего ").append(page.total());
         return sb.toString();
+    }
+
+    /**
+     * Таблица соперников в {@code <pre>}: моноширинный шрифт Telegram сохраняет отступы,
+     * эмодзи W/L/% выстраиваются в один столбец после самого длинного ФИО на странице.
+     */
+    private void appendRivalsTable(StringBuilder sb, RivalsPage page) {
+        int index = page.page() * page.pageSize();
+        List<String> prefixes = new ArrayList<>();
+        List<String> stats = new ArrayList<>();
+
+        for (RivalRow row : page.rows()) {
+            index++;
+            prefixes.add(index + ". " + rivalDisplayName(row));
+            stats.add(wlWithPercent(row.wins(), row.losses()));
+        }
+
+        int maxPrefixLen = prefixes.stream().mapToInt(String::length).max().orElse(0);
+        int gap = 2;
+
+        sb.append("<pre>");
+        for (int i = 0; i < prefixes.size(); i++) {
+            String prefix = prefixes.get(i);
+            sb.append(escape(prefix));
+            sb.append(" ".repeat(Math.max(gap, maxPrefixLen - prefix.length() + gap)));
+            sb.append(stats.get(i));
+            if (i < prefixes.size() - 1) {
+                sb.append('\n');
+            }
+        }
+        sb.append("</pre>");
     }
 
     private void appendPlayerHeader(StringBuilder sb, long playerId, String fullName, String nick) {
@@ -161,14 +183,14 @@ public class Texts {
         }
     }
 
-    private void appendPlayerInline(StringBuilder sb, long playerId, String fullName, String nick) {
-        if (fullName != null && !fullName.isBlank()) {
-            sb.append(escape(fullName)).append(" (");
-            sb.append(playerLink(playerId, nick));
-            sb.append(")");
-        } else {
-            sb.append(playerLink(playerId, nick));
+    private String rivalDisplayName(RivalRow row) {
+        if (row.fullName() != null && !row.fullName().isBlank()) {
+            return row.fullName();
         }
+        if (row.nick() != null && !row.nick().isBlank()) {
+            return row.nick();
+        }
+        return String.valueOf(row.opponentId());
     }
 
     private String playerLink(long playerId, String nick) {
@@ -176,17 +198,14 @@ public class Texts {
         return "<a href=\"" + ProfileLinks.url(playerId) + "\">" + label + "</a>";
     }
 
-    private static String ratingEmoji(Discipline discipline) {
-        return discipline == Discipline.S ? EMOJI_S : EMOJI_D;
-    }
-
     static String wlWithPercent(int wins, int losses) {
         int total = wins + losses;
         if (total == 0) {
-            return "0–0";
+            return MessageEmoji.WIN + "0  " + MessageEmoji.LOSS + "0  " + MessageEmoji.WIN_RATE + "0%";
         }
         int pct = Math.round(wins * 100f / total);
-        return wins + "–" + losses + " (" + pct + "%)";
+        return MessageEmoji.WIN + wins + "  " + MessageEmoji.LOSS + losses + "  "
+                + MessageEmoji.WIN_RATE + pct + "%";
     }
 
     /**

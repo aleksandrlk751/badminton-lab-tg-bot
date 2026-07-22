@@ -113,9 +113,16 @@ function Start-Component([string] $Name, [string] $Module) {
     $logFile = Join-Path $RunDir "$Name.log"
     $errLogFile = Join-Path $RunDir "$Name.err.log"
 
-    & $mvnw @('-q', '-f', (Join-Path $Root $Module), 'install', '-DskipTests') | Out-Null
-    if ($LASTEXITCODE -ne 0) {
-        throw "Сборка модуля $Module не удалась."
+    # Из корня реактора: модуль + зависимости (-am), с тестами — иначе bot/worker
+    # подхватят устаревший core из ~/.m2 (NoSuchMethodError на LastTournamentView и т.п.).
+    Push-Location $Root
+    try {
+        & $mvnw @('-pl', $Module, '-am', 'install')
+        if ($LASTEXITCODE -ne 0) {
+            throw "Сборка модуля $Module (с зависимостями) не удалась."
+        }
+    } finally {
+        Pop-Location
     }
 
     $proc = Start-Process `
