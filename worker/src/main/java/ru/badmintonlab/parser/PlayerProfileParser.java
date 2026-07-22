@@ -39,9 +39,15 @@ public class PlayerProfileParser {
         Optional<String> hand = parseLabeledValue(document, "Игровая рука:");
 
         Map<Discipline, BigDecimal> ratings = parseRatings(info);
-        List<PlayerProfile.RatingPoint> history = parseRatingHistory(document, "d");
+        Map<Discipline, List<PlayerProfile.RatingPoint>> histories = new LinkedHashMap<>();
+        for (Discipline discipline : ratings.keySet()) {
+            List<PlayerProfile.RatingPoint> history = parseRatingHistory(document, discipline.name().toLowerCase(Locale.ROOT));
+            if (!history.isEmpty()) {
+                histories.put(discipline, history);
+            }
+        }
 
-        return new PlayerProfile(id, nick, fullName, city, hand, ratings, history);
+        return new PlayerProfile(id, nick, fullName, city, hand, ratings, histories);
     }
 
     private long extractPlayerId(Document document) {

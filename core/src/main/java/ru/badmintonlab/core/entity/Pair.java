@@ -34,6 +34,12 @@ public class Pair {
     protected Pair() {
     }
 
+    public Pair(Long player1Id, Long player2Id, Discipline discipline) {
+        this.player1Id = player1Id;
+        this.player2Id = player2Id;
+        this.discipline = discipline;
+    }
+
     public Long getId() {
         return id;
     }

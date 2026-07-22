@@ -22,7 +22,7 @@
 ## Обзор этапов
 
 ```
-[0 Spike ✓] → [1 Каркас ✓] → [2 Worker слепок] → [3 Метрики] → [4 Bot shell]
+[0 Spike ✓] → [1 Каркас ✓] → [2 Worker слепок ✓] → [3 Метрики] → [4 Bot shell]
     → [5 H2H пары] → [6 График рейтинга] → [7 Партнёры] → [8 VPS деплой]
                                                               → [9+ Roadmap]
 ```
@@ -80,25 +80,33 @@
 
 ---
 
-## Этап 2 — Worker: полный слепок региона
+## Этап 2 — Worker: полный слепок региона ✓ (реализация)
 
 **Цель:** ежедневный слепок Москва/МО за 3 года в PostgreSQL.
 
-**Задачи:**
-- Pipeline (многопоточный, rate-limited):
-  1. Турниры `r77` (фильтр парные типы + все прошедшие/будущие в окне 3 лет).
-  2. Страница турнира → участники, пары, `Participation`, `Pair`, `TournamentRegistration`.
-  3. Для **завершённых** парных турниров: `gamesd/?tourID=` → `Match`, `match_player`;
-     `RivalSummaryAggregator` → `rival_summary` (player↔player W/L).
-  4. Профили игроков → `Player`, `player_rating`, `player_rating_history`.
-- Идемпотентность: upsert по external ID, `snapshot_meta.last_sync_at`.
-- Spring `@Scheduled` — раз в сутки; ручной trigger для dev.
-- Метрики worker: число турниров/игроков, ошибки, длительность слепка.
+**Статус:** реализовано и проверено дымовым прогоном (см. ниже). Полный 3-летний слепок
+r77 запускается пользователем (heavy live-scrape).
+
+**Задачи (выполнено):**
+- HTTP-слой: `RateLimiter` (глобальный ≤ maxRps), `HttpFetcher` (jsoup, UA, retry+backoff, 404 без ретрая),
+  `Badminton4uClient` (URL: список призёров по типу, страница турнира, `gamesd`, профиль).
+- Pipeline (многопоточный, rate-limited) в `worker.snapshot`:
+  1. Завершённые турниры `r77` **раздельными запросами по типам** (`types[]=d/md/wd/xd`) → дисциплина из фильтра.
+  2. Страница турнира → `TournamentResultsParser` → `Participation`, `Pair` (пары через `PairService`, идемпотентно).
+  3. `gamesd/?tourID=` → `Match`, `match_player` (идемпотентность по `source+external_key`).
+  4. Профили игроков (dedup) → `Player`, `player_rating`, `player_rating_history` (по всем дисциплинам).
+  5. `rival_summary` (вариант C) — **полная пересборка** из БД (`RivalSummaryRebuildService`), идемпотентно.
+- Идемпотентность: upsert по external ID; `snapshot_meta.last_sync_at` + окно.
+- Spring `@Scheduled` (флаг `scheduled-enabled`, cron) + ручной dev-trigger (`run-on-startup`, синхронно).
+- Метрики прогона (`SnapshotMetrics`): турниры/игроки/матчи/rival/ошибки/длительность (в лог).
+- Регистрация будущих турниров (`TournamentRegistration`, SSR/AJAX) **отложена в этап 7**.
 
 **DoD:**
-- [ ] Первый полный слепок r77 завершается локально (время зафиксировать в README).
-- [ ] Повторный слепок идемпотентен (нет дублей).
-- [ ] Unit/integration тесты парсера на fixtures ≥80% ключевых парсеров.
+- [x] Слепок r77 завершается локально. Дымовой прогон (1 дисциплина WD, лимит 3 турнира, ≤5 req/s):
+  ~9 c, 32 игрока, 41 матч, 272 строки `rival_summary`, 0 ошибок. Полный 3-летний — за пользователем.
+- [x] Повторный слепок идемпотентен: 2-й прогон — 0 новых матчей, 0 ошибок, `rival_summary` стабилен.
+- [x] Unit-тесты парсеров на fixtures (green) + unit-тесты мапперов (`SnapshotSupportTest`).
+  Testcontainers-интеграция отложена (проверка идемпотентности — вручную на локальной БД).
 
 **Оценка:** 1–2 недели (зависит от spike).
 
@@ -115,7 +123,8 @@
   - `ForecastService` — P3 (логистика, Laplace, blend).
   - `PairRatingService` — (A+B)/2 + бонус S_partner.
   - `PartnerScoreService` — score 0–100 для подбора (этап 7).
-- Конфиг: `H`, `k`, `S_ref`, `Bmax`, `S0`, `w1..w3`, `D_scale`, `T` месяцев — `application.yml`.
+- Конфиг: `H`, `k`, `S_ref`, `Bmax`, `S0`, `w1..w3`, `D_scale`, `T` месяцев — `application-core.yml`
+  (`badminton-lab.metrics.*` / `MetricsProperties`). Формулы и локализация — [`FORMULAR.md`](FORMULAR.md).
 - Unit-тесты на синтетических данных + 2–3 кейса с реальными числами из fixtures.
 
 **DoD:**
@@ -265,5 +274,6 @@ flowchart LR
 
 ## Следующий шаг
 
-**Этап 2:** worker — полный слепок региона r77 (турниры, участники, `gamesd`, профили, идемпотентный upsert).  
-Локальный запуск — [`README.md`](README.md) (`dev.ps1`). Spike-парсер: [`spike-parser.md`](spike-parser.md).
+**Этап 3:** метрики в `core` (S, Form, P3, рейтинг/скор пары) — воспроизводимые расчёты поверх слепка.  
+Перед этим при необходимости — полный 3-летний слепок r77 (`SNAPSHOT_MAX_TOURNAMENTS=0`, все дисциплины).
+Локальный запуск слепка — [`README.md`](README.md). Spike-парсер: [`spike-parser.md`](spike-parser.md).

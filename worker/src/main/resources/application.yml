@@ -17,6 +17,18 @@ management:
 
 badminton-lab:
   parser:
+    base-url: ${PARSER_BASE_URL:https://badminton4u.ru/}
     threads: ${PARSER_THREADS:8}
     max-rps: ${PARSER_MAX_RPS:10}
+    connect-timeout-ms: ${PARSER_CONNECT_TIMEOUT_MS:15000}
+    retry-max: ${PARSER_RETRY_MAX:3}
+    retry-backoff-ms: ${PARSER_RETRY_BACKOFF_MS:1000}
     user-agent: ${PARSER_USER_AGENT:BadmintonLabBot/0.1 (+https://github.com/badminton-lab-tg-bot)}
+  snapshot:
+    region-code: ${SNAPSHOT_REGION:r77}
+    years-back: ${SNAPSHOT_YEARS_BACK:3}
+    disciplines: ${SNAPSHOT_DISCIPLINES:D,MD,WD,XD}
+    run-on-startup: ${SNAPSHOT_RUN_ON_STARTUP:false}
+    max-tournaments: ${SNAPSHOT_MAX_TOURNAMENTS:0}
+    scheduled-enabled: ${SNAPSHOT_SCHEDULED_ENABLED:false}
+    cron: ${SNAPSHOT_CRON:0 0 4 * * *}

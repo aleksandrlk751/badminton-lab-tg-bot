@@ -33,12 +33,23 @@ public class MatchPlayer {
     protected MatchPlayer() {
     }
 
+    public MatchPlayer(MatchPlayerId id, MatchSide side, BigDecimal ratingBefore, BigDecimal ratingDelta) {
+        this.id = id;
+        this.side = side;
+        this.ratingBefore = ratingBefore;
+        this.ratingDelta = ratingDelta;
+    }
+
     public MatchPlayerId getId() {
         return id;
     }
 
     public MatchSide getSide() {
         return side;
+    }
+
+    public BigDecimal getRatingBefore() {
+        return ratingBefore;
     }
 
     public BigDecimal getRatingDelta() {

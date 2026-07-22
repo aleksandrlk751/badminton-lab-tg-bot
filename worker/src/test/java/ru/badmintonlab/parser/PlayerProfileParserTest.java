@@ -28,7 +28,8 @@ class PlayerProfileParserTest {
         assertEquals("Красногорск", profile.city().orElseThrow());
         assertEquals("правая", profile.playingHand().orElseThrow());
         assertEquals(new BigDecimal("535"), profile.ratings().get(Discipline.D));
-        assertFalse(profile.ratingHistory().isEmpty());
-        assertEquals(new BigDecimal("535"), profile.ratingHistory().get(profile.ratingHistory().size() - 1).rating());
+        var historyD = profile.ratingHistories().get(Discipline.D);
+        assertFalse(historyD.isEmpty());
+        assertEquals(new BigDecimal("535"), historyD.get(historyD.size() - 1).rating());
     }
 }

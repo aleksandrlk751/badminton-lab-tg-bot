@@ -13,7 +13,7 @@ public record PlayerProfile(
         Optional<String> city,
         Optional<String> playingHand,
         Map<Discipline, BigDecimal> ratings,
-        List<RatingPoint> ratingHistory
+        Map<Discipline, List<RatingPoint>> ratingHistories
 ) {
     public record RatingPoint(LocalDate date, BigDecimal rating) {}
 }

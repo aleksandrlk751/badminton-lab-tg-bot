@@ -52,6 +52,11 @@ public class Participation {
     protected Participation() {
     }
 
+    public Participation(Long tournamentId, Long playerId) {
+        this.tournamentId = tournamentId;
+        this.playerId = playerId;
+    }
+
     public Long getId() {
         return id;
     }
@@ -66,5 +71,73 @@ public class Participation {
 
     public Long getPairId() {
         return pairId;
+    }
+
+    public void setPairId(Long pairId) {
+        this.pairId = pairId;
+    }
+
+    public Short getPlace() {
+        return place;
+    }
+
+    public void setPlace(Short place) {
+        this.place = place;
+    }
+
+    public BigDecimal getRatingBefore() {
+        return ratingBefore;
+    }
+
+    public void setRatingBefore(BigDecimal ratingBefore) {
+        this.ratingBefore = ratingBefore;
+    }
+
+    public BigDecimal getRatingDelta() {
+        return ratingDelta;
+    }
+
+    public void setRatingDelta(BigDecimal ratingDelta) {
+        this.ratingDelta = ratingDelta;
+    }
+
+    public BigDecimal getRatingAfter() {
+        return ratingAfter;
+    }
+
+    public void setRatingAfter(BigDecimal ratingAfter) {
+        this.ratingAfter = ratingAfter;
+    }
+
+    public Short getMatchesWon() {
+        return matchesWon;
+    }
+
+    public void setMatchesWon(Short matchesWon) {
+        this.matchesWon = matchesWon;
+    }
+
+    public Short getMatchesLost() {
+        return matchesLost;
+    }
+
+    public void setMatchesLost(Short matchesLost) {
+        this.matchesLost = matchesLost;
+    }
+
+    public Short getSetsWon() {
+        return setsWon;
+    }
+
+    public void setSetsWon(Short setsWon) {
+        this.setsWon = setsWon;
+    }
+
+    public Short getSetsLost() {
+        return setsLost;
+    }
+
+    public void setSetsLost(Short setsLost) {
+        this.setsLost = setsLost;
     }
 }

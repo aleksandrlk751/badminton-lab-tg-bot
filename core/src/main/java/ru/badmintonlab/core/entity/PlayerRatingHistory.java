@@ -40,6 +40,13 @@ public class PlayerRatingHistory {
     protected PlayerRatingHistory() {
     }
 
+    public PlayerRatingHistory(Long playerId, Discipline discipline, LocalDate recordedAt, BigDecimal rating) {
+        this.playerId = playerId;
+        this.discipline = discipline;
+        this.recordedAt = recordedAt;
+        this.rating = rating;
+    }
+
     public Long getId() {
         return id;
     }
@@ -58,5 +65,9 @@ public class PlayerRatingHistory {
 
     public BigDecimal getRating() {
         return rating;
+    }
+
+    public void setRating(BigDecimal rating) {
+        this.rating = rating;
     }
 }

@@ -3,6 +3,8 @@ package ru.badmintonlab.core.entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
 import java.math.BigDecimal;
@@ -24,12 +26,27 @@ public class PlayerRating {
     protected PlayerRating() {
     }
 
+    public PlayerRating(PlayerRatingId id, BigDecimal rating) {
+        this.id = id;
+        this.rating = rating;
+    }
+
+    @PrePersist
+    @PreUpdate
+    void touch() {
+        updatedAt = Instant.now();
+    }
+
     public PlayerRatingId getId() {
         return id;
     }
 
     public BigDecimal getRating() {
         return rating;
+    }
+
+    public void setRating(BigDecimal rating) {
+        this.rating = rating;
     }
 
     public Instant getUpdatedAt() {

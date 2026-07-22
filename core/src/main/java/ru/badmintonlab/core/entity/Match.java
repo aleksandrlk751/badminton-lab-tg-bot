@@ -51,6 +51,14 @@ public class Match {
     protected Match() {
     }
 
+    public Match(Long tournamentId, Discipline discipline, Instant playedAt, String scoreSets, String source) {
+        this.tournamentId = tournamentId;
+        this.discipline = discipline;
+        this.playedAt = playedAt;
+        this.scoreSets = scoreSets;
+        this.source = source;
+    }
+
     public Long getId() {
         return id;
     }
@@ -67,7 +75,35 @@ public class Match {
         return playedAt;
     }
 
+    public String getStage() {
+        return stage;
+    }
+
+    public void setStage(String stage) {
+        this.stage = stage;
+    }
+
+    public String getScoreSets() {
+        return scoreSets;
+    }
+
+    public Short getDurationMin() {
+        return durationMin;
+    }
+
+    public void setDurationMin(Short durationMin) {
+        this.durationMin = durationMin;
+    }
+
+    public String getSource() {
+        return source;
+    }
+
     public String getExternalKey() {
         return externalKey;
+    }
+
+    public void setExternalKey(String externalKey) {
+        this.externalKey = externalKey;
     }
 }
