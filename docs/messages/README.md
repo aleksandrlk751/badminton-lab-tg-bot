@@ -21,9 +21,9 @@
 | [`03-player-card.md`](03-player-card.md) | Карточка игрока | **реализовано** |
 | [`04-rivals.md`](04-rivals.md) | Соперники | **реализовано** |
 | [`05-h2h.md`](05-h2h.md) | H2H | **согласовано** (код — этап 5) |
-| [`06-rating-history.md`](06-rating-history.md) | График рейтинга | **согласовано** (код — этап 6) |
+| [`06-rating-history.md`](06-rating-history.md) | График рейтинга | **согласовано** (код — этап 7) |
 | [`07-help.md`](07-help.md) | `/help` | **согласовано** |
-| [`08-partner-pick.md`](08-partner-pick.md) | Подбор партнёра | черновик (этап 7) |
+| [`08-partner-pick.md`](08-partner-pick.md) | Подбор партнёра | черновик (этап 8) |
 | [`_template.md`](_template.md) | Шаблон | — |
 
 ## Ключевые решения (кратко)
