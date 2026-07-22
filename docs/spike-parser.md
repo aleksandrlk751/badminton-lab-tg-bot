@@ -136,7 +136,7 @@ badminton4u:game:{tournamentId}:{playedAt}:{sortedA}:vs{sortedB}:{scoreSets}:{st
 | **Fixture** | `player-18499.html` |
 | **URL** | [players/18499](https://badminton4u.ru/players/18499) |
 | **Парсер** | id=`18499`, nick=`Olya_fox`, ФИО=`Крупская Ольга Андреевна`, город=`Красногорск`, рука=`правая` |
-| **Рейтинг D** | `535` |
+| **Рейтинг D** | `535` (вкладка DOUBLE / `h3` у ника; не из `chartAllData`) |
 | **История D (последние 3 точки)** | `09.03.2026 → 548`, `11.04.2026 → 549`, `14.06.2026 → 535` (график «последние 10» / `chartLastData_d`) |
 
 ### 5. Соперники — `RivalSummaryAggregator` (вариант C)

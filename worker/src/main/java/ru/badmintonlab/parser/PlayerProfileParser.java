@@ -12,10 +12,12 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -40,7 +42,7 @@ public class PlayerProfileParser {
 
         Map<Discipline, BigDecimal> ratings = parseRatings(info);
         Map<Discipline, List<PlayerProfile.RatingPoint>> histories = new LinkedHashMap<>();
-        for (Discipline discipline : ratings.keySet()) {
+        for (Discipline discipline : ratingDisciplines(info, ratings)) {
             List<PlayerProfile.RatingPoint> history = parseRatingHistory(document, discipline.name().toLowerCase(Locale.ROOT));
             if (!history.isEmpty()) {
                 histories.put(discipline, history);
@@ -75,7 +77,7 @@ public class PlayerProfileParser {
         }
         String ownText = h3.ownText();
         if (!ownText.isBlank()) {
-            return ownText.trim();
+            return ownText.replaceAll("\\s*/\\s*$", "").trim();
         }
         return h3.text().replaceAll("\\s*\\d+([.,]\\d+)?\\s*$", "").trim();
     }
@@ -92,19 +94,83 @@ public class PlayerProfileParser {
         return Optional.empty();
     }
 
+    /**
+     * Текущий рейтинг: вкладки SINGLE/DOUBLE у графика; если в tab нет числа — fallback из {@code h3} у ника.
+     * Не используем chartAllData (история) — там точки прошлых турниров.
+     */
     private Map<Discipline, BigDecimal> parseRatings(Element info) {
         Map<Discipline, BigDecimal> ratings = new LinkedHashMap<>();
+        parseRatingsFromTabs(info, ratings);
+        parseRatingsFromHeader(info, ratings);
+        return ratings;
+    }
+
+    private void parseRatingsFromTabs(Element info, Map<Discipline, BigDecimal> ratings) {
         for (Element tab : info.select("#tabs li[data-tab]")) {
             Discipline discipline = Discipline.fromRatingTab(tab.attr("data-tab")).orElse(null);
             if (discipline == null) {
                 continue;
             }
-            Elements dfns = tab.select("dfn");
-            for (Element dfn : dfns) {
-                ParseUtils.parseDecimal(dfn.text()).ifPresent(value -> ratings.putIfAbsent(discipline, value));
+            lastDecimal(tab.select("dfn")).ifPresent(value -> ratings.put(discipline, value));
+        }
+    }
+
+    private void parseRatingsFromHeader(Element info, Map<Discipline, BigDecimal> ratings) {
+        Element h3 = info.selectFirst("h3");
+        if (h3 == null) {
+            return;
+        }
+        Elements dfns = h3.select("dfn");
+        List<BigDecimal> values = dfns.stream()
+                .map(dfn -> ParseUtils.parseDecimal(dfn.text()))
+                .flatMap(Optional::stream)
+                .toList();
+        if (values.isEmpty()) {
+            return;
+        }
+        if (h3.html().contains(" / ") && values.size() >= 2) {
+            ratings.putIfAbsent(Discipline.S, values.get(0));
+            ratings.putIfAbsent(Discipline.D, values.get(values.size() - 1));
+            return;
+        }
+        if (dfns.size() >= 2 && ParseUtils.parseDecimal(dfns.get(0).text()).isEmpty()) {
+            lastDecimal(dfns).ifPresent(value -> ratings.putIfAbsent(Discipline.D, value));
+            return;
+        }
+        if (values.size() == 1) {
+            resolveActiveDiscipline(info).ifPresent(d -> ratings.putIfAbsent(d, values.get(0)));
+        }
+    }
+
+    private Optional<Discipline> resolveActiveDiscipline(Element info) {
+        Element tab = info.selectFirst("#tabs li.act[data-tab]");
+        if (tab == null) {
+            tab = info.selectFirst("#tabs li[data-tab]");
+        }
+        if (tab == null) {
+            return Optional.empty();
+        }
+        return Discipline.fromRatingTab(tab.attr("data-tab"));
+    }
+
+    private Set<Discipline> ratingDisciplines(Element info, Map<Discipline, BigDecimal> ratings) {
+        Set<Discipline> disciplines = new LinkedHashSet<>();
+        for (Element tab : info.select("#tabs li[data-tab]")) {
+            Discipline.fromRatingTab(tab.attr("data-tab")).ifPresent(disciplines::add);
+        }
+        disciplines.addAll(ratings.keySet());
+        return disciplines;
+    }
+
+    private Optional<BigDecimal> lastDecimal(Elements dfns) {
+        Optional<BigDecimal> last = Optional.empty();
+        for (Element dfn : dfns) {
+            Optional<BigDecimal> parsed = ParseUtils.parseDecimal(dfn.text());
+            if (parsed.isPresent()) {
+                last = parsed;
             }
         }
-        return ratings;
+        return last;
     }
 
     List<PlayerProfile.RatingPoint> parseRatingHistory(Document document, String siteCode) {
