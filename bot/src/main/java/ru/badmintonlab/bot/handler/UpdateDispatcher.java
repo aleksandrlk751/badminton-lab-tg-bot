@@ -26,7 +26,6 @@ import java.util.Optional;
 
 /**
  * Маршрутизация Telegram-обновлений в ответы бота (этап 4: меню, поиск, карточка, соперники).
- * Метод не выполняет запросы к Telegram, а возвращает список методов API — так его удобно тестировать.
  */
 @Component
 public class UpdateDispatcher {
@@ -59,8 +58,6 @@ public class UpdateDispatcher {
         return List.of();
     }
 
-    // ----- Текстовые сообщения -----
-
     private List<BotApiMethod<?>> onText(Message message) {
         long chatId = message.getChatId();
         String text = message.getText().trim();
@@ -81,7 +78,7 @@ public class UpdateDispatcher {
             case "/help" -> List.of(send(chatId, texts.help(), null));
             case "/h2h" -> List.of(send(chatId, texts.h2hStub(), null));
             default -> List.of(send(chatId,
-                    "Неизвестная команда. Отправьте ник или фамилию игрока, либо /start.", null));
+                    "Неизвестная команда. Введите фамилию или ник игрока, либо /start.", null));
         };
     }
 
@@ -93,11 +90,9 @@ public class UpdateDispatcher {
         if (results.isEmpty()) {
             return List.of(send(chatId, texts.notFound(text), null));
         }
-        return List.of(send(chatId, texts.searchResultsHeader(text, results.size()),
+        return List.of(send(chatId, texts.searchResultsHeader(results.size()),
                 keyboards.searchResults(results)));
     }
-
-    // ----- Callback-запросы (нажатия inline-кнопок) -----
 
     private List<BotApiMethod<?>> onCallback(CallbackQuery query) {
         List<BotApiMethod<?>> out = new ArrayList<>();
@@ -118,7 +113,9 @@ public class UpdateDispatcher {
                     alert = answerText != null;
                 }
                 case CallbackData.RIVALS_PAGE -> handleRivalsPage(
-                        parseId(parts, 1), Discipline.valueOf(parts[2]), Integer.parseInt(parts[3]),
+                        parseId(parts, 1),
+                        CallbackData.parseRivalsDiscipline(parts[2]),
+                        Integer.parseInt(parts[3]),
                         chatId, messageId, out);
                 case CallbackData.H2H -> {
                     answerText = texts.h2hStub();
@@ -128,9 +125,7 @@ public class UpdateDispatcher {
                     answerText = texts.historyStub();
                     alert = true;
                 }
-                default -> {
-                    // NOOP и неизвестные — просто закрываем «часики» на кнопке
-                }
+                default -> { /* NOOP */ }
             }
         } catch (RuntimeException e) {
             answerText = "Не удалось выполнить действие.";
@@ -167,24 +162,19 @@ public class UpdateDispatcher {
             out.add(edit(chatId, messageId, "Игрок не найден.", null));
             return;
         }
-        boolean hasRivals = !rivalService.disciplinesWithRivals(playerId).isEmpty();
+        boolean hasRivals = rivalService.hasRivals(playerId);
         out.add(edit(chatId, messageId, texts.card(card.get()), keyboards.card(card.get(), hasRivals)));
     }
 
-    /**
-     * Соперники с дисциплиной по умолчанию. Возвращает текст для alert, если соперников нет
-     * (в этом случае карточку не трогаем), иначе {@code null}.
-     */
     private String handleRivalsDefault(long playerId, Long chatId, Integer messageId,
                                        List<BotApiMethod<?>> out) {
         if (chatId == null || messageId == null) {
             return null;
         }
-        Optional<Discipline> discipline = rivalService.defaultDiscipline(playerId);
-        if (discipline.isEmpty()) {
+        if (!rivalService.hasRivals(playerId)) {
             return "Соперников пока нет.";
         }
-        RivalsPage page = rivalService.rivals(playerId, discipline.get(), 0);
+        RivalsPage page = rivalService.rivals(playerId, null, 0);
         out.add(edit(chatId, messageId, texts.rivals(page), keyboards.rivals(page)));
         return null;
     }
@@ -197,8 +187,6 @@ public class UpdateDispatcher {
         RivalsPage rivalsPage = rivalService.rivals(playerId, discipline, page);
         out.add(edit(chatId, messageId, texts.rivals(rivalsPage), keyboards.rivals(rivalsPage)));
     }
-
-    // ----- Фабрики методов API -----
 
     private long parseId(String[] parts, int index) {
         return Long.parseLong(parts[index]);

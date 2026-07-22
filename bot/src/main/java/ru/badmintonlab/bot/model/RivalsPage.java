@@ -5,11 +5,11 @@ import ru.badmintonlab.core.domain.Discipline;
 import java.util.List;
 
 /**
- * Страница экрана «Соперники»: строки текущей страницы, выбранная дисциплина,
- * доступные дисциплины (для переключателя) и данные пагинации.
+ * Страница экрана «Соперники». {@code discipline == null} — фильтр «Все» (сумма W–L по разрядам).
  */
 public record RivalsPage(
         long playerId,
+        String playerFullName,
         Discipline discipline,
         List<RivalRow> rows,
         int page,
@@ -31,5 +31,13 @@ public record RivalsPage(
 
     public boolean hasNext() {
         return page + 1 < totalPages();
+    }
+
+    public boolean allDisciplines() {
+        return discipline == null;
+    }
+
+    public String disciplineFilterLabel() {
+        return discipline == null ? "Все" : discipline.name();
     }
 }

@@ -27,8 +27,15 @@ class CallbackDataTest {
         String[] parts = CallbackData.parse(data);
         assertEquals("rvp", parts[0]);
         assertEquals(42L, Long.parseLong(parts[1]));
-        assertEquals(Discipline.XD, Discipline.valueOf(parts[2]));
+        assertEquals(Discipline.XD, CallbackData.parseRivalsDiscipline(parts[2]));
         assertEquals(3, Integer.parseInt(parts[3]));
+    }
+
+    @Test
+    void rivalsPageAllDisciplines() {
+        String data = CallbackData.rivalsPage(42L, null, 0);
+        assertEquals("rvp:42:ALL:0", data);
+        assertEquals(null, CallbackData.parseRivalsDiscipline("ALL"));
     }
 
     @Test

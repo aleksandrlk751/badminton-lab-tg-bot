@@ -1,10 +1,13 @@
 package ru.badmintonlab.bot.view;
 
 import org.springframework.stereotype.Component;
+import ru.badmintonlab.bot.model.LastTournamentInfo;
 import ru.badmintonlab.bot.model.PlayerCard;
 import ru.badmintonlab.bot.model.RatingLine;
 import ru.badmintonlab.bot.model.RivalRow;
 import ru.badmintonlab.bot.model.RivalsPage;
+import ru.badmintonlab.bot.util.ProfileLinks;
+import ru.badmintonlab.core.domain.Discipline;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -19,128 +22,171 @@ public class Texts {
 
     public static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
+    private static final String EMOJI_S = "🆂";
+    private static final String EMOJI_D = "🅳";
+
     public String menu() {
         return """
-                <b>Badminton LAB</b> — аналитика любительского бадминтона.
+                <b>Badminton LAB</b>
 
-                Отправьте ник или фамилию игрока (от 3 символов) — я найду карточку.
-                Либо выберите пункт меню ниже.""";
+                Статистика игроков Москвы и МО: рейтинги, соперники, H2H.
+
+                Введите фамилию или ник — или выберите действие:
+
+                <i>Данные по Москве и МО · обновление ежедневно</i>""";
     }
 
     public String help() {
         return """
                 <b>Справка</b>
 
-                • Найти игрока — отправьте ник или фамилию (от 3 символов); можно неполную фамилию.
-                • Карточка — рейтинги D/MD/WD/XD, последний турнир, соперники.
-                • H2H (сравнение двух игроков) и график истории рейтинга — в разработке.
+                • 🔍 Найти игрока — введите фамилию или ник (от 3 символов)
+                • Карточка — рейтинги 🆂/🅳, последний турнир, 🤺 соперники
+                • 🆚 Сравнить (H2H) — сравнение двух игроков по всем встречам
+                • 📈 История рейтинга — график (скоро)
 
-                Данные — по региону Москва и МО, обновляются ежедневно.""";
+                <i>Данные: игроки Москвы и МО, глубина 3 года, обновление раз в сутки.</i>""";
     }
 
     public String queryTooShort() {
-        return "Введите минимум 3 символа — ник или фамилию игрока.";
+        return "Введите минимум 3 символа — фамилию или ник.";
     }
 
     public String notFound(String query) {
-        return "По запросу «" + escape(query) + "» никого не нашёл.\n\n"
-                + "Проверьте написание. Возможно, игрок отсутствует в базе региона (Москва и МО).";
+        return "По запросу «" + escape(query) + "» ничего не найдено.\n\n"
+                + "• Проверьте написание фамилии или ника\n"
+                + "• В базе только игроки Москвы и МО за последние 3 года";
     }
 
     public String h2hStub() {
-        return "Сравнение игроков (H2H) появится на следующем этапе.";
+        return "Сравнение игроков (H2H) — скоро.";
     }
 
     public String historyStub() {
-        return "График истории рейтинга появится на следующем этапе.";
+        return """
+                График истории рейтинга — скоро.
+                Текущие значения — на карточке.""";
     }
 
-    public String searchResultsHeader(String query, int count) {
+    public String searchResultsHeader(int count) {
+        return searchResultsHeaderLine(count) + "\n\nВыберите из предложенных вариантов";
+    }
+
+    private static String searchResultsHeaderLine(int count) {
         if (count == 1) {
-            return "Нашёл 1 игрока по запросу «" + escape(query) + "»:";
+            return "Нашёл 1 игрока, подходящего под критерии поиска";
         }
-        return "Нашёл " + count + " игроков по запросу «" + escape(query) + "». Выберите:";
+        if (count >= 2 && count <= 4) {
+            return "Нашёл " + count + " игрока, подходящих под критерии поиска";
+        }
+        return "Нашёл " + count + " игроков, подходящих под критерии поиска";
     }
 
     public String card(PlayerCard card) {
         StringBuilder sb = new StringBuilder();
-        sb.append("<b>").append(escape(card.nick())).append("</b>");
-        if (card.fullName() != null && !card.fullName().isBlank()) {
-            sb.append("\n").append(escape(card.fullName()));
-        }
+        appendPlayerHeader(sb, card.playerId(), card.fullName(), card.nick());
         if (card.city() != null && !card.city().isBlank()) {
-            sb.append("\n📍 ").append(escape(card.city()));
+            sb.append("\n").append(escape(card.city()));
         }
 
-        sb.append("\n\n<b>Рейтинги</b>\n");
-        if (card.ratings().isEmpty()) {
-            sb.append("нет данных по парным разрядам");
-        } else {
-            sb.append(ratingsLine(card.ratings()));
+        if (!card.ratings().isEmpty()) {
+            sb.append("\n\n<b>Рейтинги</b>\n");
+            for (RatingLine line : card.ratings()) {
+                sb.append(ratingEmoji(line.discipline())).append("  ")
+                        .append("<code>").append(formatRating(line.rating())).append("</code>\n");
+            }
         }
 
         if (card.lastTournament() != null) {
-            sb.append("\n\n<b>Последний турнир</b>\n");
-            sb.append(escape(card.lastTournament().name()));
-            LocalDate date = card.lastTournament().date();
-            if (date != null) {
-                sb.append(" (").append(date.format(DATE)).append(")");
-            }
-            Short place = card.lastTournament().place();
-            if (place != null) {
-                sb.append("\nМесто: ").append(place);
-            }
+            appendLastTournament(sb, card.lastTournament());
         }
-
-        sb.append("\n\n").append(footer(card.snapshotDate()));
-        return sb.toString();
+        return sb.toString().trim();
     }
 
-    private String ratingsLine(List<RatingLine> ratings) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < ratings.size(); i++) {
-            RatingLine line = ratings.get(i);
-            if (i > 0) {
-                sb.append("   ");
+    private void appendLastTournament(StringBuilder sb, LastTournamentInfo t) {
+        sb.append("\n\n<b>Последний турнир</b>\n");
+        sb.append(escape(t.name()));
+        if (t.date() != null || t.resultLabel() != null) {
+            sb.append("\n");
+            if (t.date() != null) {
+                sb.append(t.date().format(DATE));
             }
-            sb.append(DisciplineLabels.label(line.discipline()))
-                    .append(": <b>").append(formatRating(line.rating())).append("</b>");
+            if (t.resultLabel() != null && !t.resultLabel().isBlank()) {
+                if (t.date() != null) {
+                    sb.append(" · ");
+                }
+                sb.append(escape(t.resultLabel()));
+            }
         }
-        return sb.toString();
     }
 
     public String rivals(RivalsPage page) {
         StringBuilder sb = new StringBuilder();
-        sb.append("<b>Соперники</b> · ").append(DisciplineLabels.label(page.discipline()));
+        sb.append("<b>Соперники</b>");
+        if (page.playerFullName() != null && !page.playerFullName().isBlank()) {
+            sb.append(" · ").append(escape(page.playerFullName()));
+        }
+        sb.append(" · ").append(escape(page.disciplineFilterLabel()));
+
         if (page.rows().isEmpty()) {
-            sb.append("\n\nВстреч в этой дисциплине нет.");
+            sb.append("\n\n");
+            if (page.allDisciplines()) {
+                sb.append("Соперников пока нет.");
+            } else {
+                sb.append("Встреч в разряде ").append(page.discipline().name()).append(" нет.");
+            }
             return sb.toString();
         }
+
         sb.append("\n\n");
         int index = page.page() * page.pageSize();
         for (RivalRow row : page.rows()) {
             index++;
-            sb.append(index).append(". <b>").append(escape(row.nick())).append("</b>");
-            if (row.fullName() != null && !row.fullName().isBlank()) {
-                sb.append(" — ").append(escape(row.fullName()));
-            }
-            sb.append("\n    W-L: ").append(row.wins()).append("-").append(row.losses())
-                    .append("  (встреч: ").append(row.games()).append(")");
-            if (row.city() != null && !row.city().isBlank()) {
-                sb.append("  · ").append(escape(row.city()));
-            }
-            sb.append("\n");
+            sb.append(index).append(". ");
+            appendPlayerInline(sb, row.opponentId(), row.fullName(), row.nick());
+            sb.append("     ").append(wlWithPercent(row.wins(), row.losses())).append("\n");
         }
-        sb.append("\nСтраница ").append(page.page() + 1).append("/").append(page.totalPages())
-                .append(" · всего соперников: ").append(page.total());
+        sb.append("\nСтр. ").append(page.page() + 1).append("/").append(page.totalPages())
+                .append(" · всего ").append(page.total());
         return sb.toString();
     }
 
-    private String footer(LocalDate snapshotDate) {
-        if (snapshotDate == null) {
-            return "<i>Данные загружаются</i>";
+    private void appendPlayerHeader(StringBuilder sb, long playerId, String fullName, String nick) {
+        if (fullName != null && !fullName.isBlank()) {
+            sb.append("<b>").append(escape(fullName)).append("</b> (");
+            sb.append(playerLink(playerId, nick));
+            sb.append(")");
+        } else {
+            sb.append("<b>").append(playerLink(playerId, nick)).append("</b>");
         }
-        return "<i>Данные на " + snapshotDate.format(DATE) + "</i>";
+    }
+
+    private void appendPlayerInline(StringBuilder sb, long playerId, String fullName, String nick) {
+        if (fullName != null && !fullName.isBlank()) {
+            sb.append(escape(fullName)).append(" (");
+            sb.append(playerLink(playerId, nick));
+            sb.append(")");
+        } else {
+            sb.append(playerLink(playerId, nick));
+        }
+    }
+
+    private String playerLink(long playerId, String nick) {
+        String label = (nick != null && !nick.isBlank()) ? escape(nick) : String.valueOf(playerId);
+        return "<a href=\"" + ProfileLinks.url(playerId) + "\">" + label + "</a>";
+    }
+
+    private static String ratingEmoji(Discipline discipline) {
+        return discipline == Discipline.S ? EMOJI_S : EMOJI_D;
+    }
+
+    static String wlWithPercent(int wins, int losses) {
+        int total = wins + losses;
+        if (total == 0) {
+            return "0–0";
+        }
+        int pct = Math.round(wins * 100f / total);
+        return wins + "–" + losses + " (" + pct + "%)";
     }
 
     /**

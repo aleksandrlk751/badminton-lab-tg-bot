@@ -160,6 +160,7 @@ docs/README.md   — этот файл
 docs/BRIEF.md    — бриф: решения, формулы, открытые вопросы
 docs/PLAN.md     — план реализации по этапам
 docs/FORMULAR.md — формулы и константы (дефолты, локализация, описание)
+docs/messages/   — дизайн-проект сообщений бота (mockup экранов, принципы UX)
 docs/spike-parser.md — отчёт spike парсера (этап 0)
 docs/schema.sql  — черновик DDL (источник для Flyway V1)
 AGENTS.md        — инструкции для AI-агентов

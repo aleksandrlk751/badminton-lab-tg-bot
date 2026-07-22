@@ -111,6 +111,7 @@ function Start-Component([string] $Name, [string] $Module) {
 
     $mvnw = Join-Path $Root 'mvnw.cmd'
     $logFile = Join-Path $RunDir "$Name.log"
+    $errLogFile = Join-Path $RunDir "$Name.err.log"
 
     & $mvnw @('-q', '-f', (Join-Path $Root $Module), 'install', '-DskipTests') | Out-Null
     if ($LASTEXITCODE -ne 0) {
@@ -122,7 +123,7 @@ function Start-Component([string] $Name, [string] $Module) {
         -ArgumentList @('spring-boot:run') `
         -WorkingDirectory (Join-Path $Root $Module) `
         -RedirectStandardOutput $logFile `
-        -RedirectStandardError $logFile `
+        -RedirectStandardError $errLogFile `
         -PassThru `
         -WindowStyle Hidden
 

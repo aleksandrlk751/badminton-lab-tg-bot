@@ -16,10 +16,9 @@ public interface ParticipationRepository extends JpaRepository<Participation, Lo
 
     /**
      * Последние турниры игрока по дате старта (для карточки берём первый).
-     * Participation не имеет ассоциации к Tournament (FK — обычный столбец), поэтому явный join в JPQL.
      */
     @Query("""
-            SELECT t.name AS name, t.startsAt AS startsAt, pa.place AS place
+            SELECT t.id AS tournamentId, t.name AS name, t.startsAt AS startsAt, pa.place AS place
             FROM Participation pa, Tournament t
             WHERE t.id = pa.tournamentId AND pa.playerId = :playerId
             ORDER BY t.startsAt DESC

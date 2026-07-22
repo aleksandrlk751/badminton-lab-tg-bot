@@ -36,7 +36,15 @@ public final class CallbackData {
     }
 
     public static String rivalsPage(long playerId, Discipline discipline, int page) {
-        return RIVALS_PAGE + SEP + playerId + SEP + discipline.name() + SEP + page;
+        String disc = discipline == null ? "ALL" : discipline.name();
+        return RIVALS_PAGE + SEP + playerId + SEP + disc + SEP + page;
+    }
+
+    public static Discipline parseRivalsDiscipline(String token) {
+        if (token == null || "ALL".equals(token)) {
+            return null;
+        }
+        return Discipline.valueOf(token);
     }
 
     public static String h2h(long playerId) {

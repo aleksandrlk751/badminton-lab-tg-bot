@@ -2,9 +2,11 @@ package ru.badmintonlab.bot.view;
 
 import org.junit.jupiter.api.Test;
 import ru.badmintonlab.bot.model.PlayerCard;
+import ru.badmintonlab.bot.model.PlayerSearchResult;
 import ru.badmintonlab.bot.model.RatingLine;
 import ru.badmintonlab.bot.model.RivalRow;
 import ru.badmintonlab.bot.model.RivalsPage;
+import ru.badmintonlab.bot.model.LastTournamentInfo;
 import ru.badmintonlab.core.domain.Discipline;
 
 import java.math.BigDecimal;
@@ -12,6 +14,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TextsTest {
@@ -32,32 +35,43 @@ class TextsTest {
     }
 
     @Test
-    void cardContainsKeyFieldsAndFooter() {
+    void cardUsesFioFirstRatingsAndNoFooter() {
         PlayerCard card = new PlayerCard(
                 18499L,
                 "Rocket",
                 "Иванов Иван",
                 "Москва",
-                List.of(new RatingLine(Discipline.MD, new BigDecimal("380.0")),
-                        new RatingLine(Discipline.XD, new BigDecimal("410.5"))),
-                null,
+                List.of(new RatingLine(Discipline.S, new BigDecimal("320.0")),
+                        new RatingLine(Discipline.D, new BigDecimal("535.0"))),
+                new LastTournamentInfo("Кубок LAB", LocalDate.of(2026, 6, 15), (short) 2, "2-е место"),
                 LocalDate.of(2026, 7, 20));
 
         String text = texts.card(card);
 
-        assertTrue(text.contains("Rocket"), text);
-        assertTrue(text.contains("Иванов Иван"), text);
+        assertTrue(text.contains("<b>Иванов Иван</b>"), text);
+        assertTrue(text.contains("Rocket</a>"), text);
         assertTrue(text.contains("Москва"), text);
-        assertTrue(text.contains("MD: <b>380</b>"), text);
-        assertTrue(text.contains("XD: <b>410.5</b>"), text);
-        assertTrue(text.contains("Данные на 20.07.2026"), text);
+        assertTrue(text.contains("🆂"), text);
+        assertTrue(text.contains("<code>320</code>"), text);
+        assertTrue(text.contains("🅳"), text);
+        assertTrue(text.contains("<code>535</code>"), text);
+        assertTrue(text.contains("2-е место"), text);
+        assertFalse(text.contains("Данные на"), text);
+    }
+
+    @Test
+    void searchResultsHeaderPluralizes() {
+        assertTrue(texts.searchResultsHeader(1).contains("1 игрока"));
+        assertTrue(texts.searchResultsHeader(3).contains("3 игрока"));
+        assertTrue(texts.searchResultsHeader(5).contains("5 игроков"));
     }
 
     @Test
     void rivalsRendersRowsAndPaginationInfo() {
         RivalsPage page = new RivalsPage(
                 1L,
-                Discipline.MD,
+                "Иванов Иван",
+                null,
                 List.of(new RivalRow(2L, "Foe", "Петров Пётр", "Москва", 3, 1)),
                 0,
                 8,
@@ -67,14 +81,15 @@ class TextsTest {
         String text = texts.rivals(page);
 
         assertTrue(text.contains("Соперники"), text);
-        assertTrue(text.contains("MD"), text);
-        assertTrue(text.contains("Foe"), text);
-        assertTrue(text.contains("W-L: 3-1"), text);
+        assertTrue(text.contains("Все"), text);
+        assertTrue(text.contains("Петров Пётр"), text);
+        assertTrue(text.contains("3–1 (75%)"), text);
+        assertFalse(text.contains("Москва"), text);
     }
 
     @Test
     void rivalsHandlesEmptyDiscipline() {
-        RivalsPage page = new RivalsPage(1L, Discipline.WD, List.of(), 0, 8, 0, List.of());
-        assertTrue(texts.rivals(page).contains("Встреч в этой дисциплине нет"));
+        RivalsPage page = new RivalsPage(1L, "Иванов", Discipline.WD, List.of(), 0, 8, 0, List.of());
+        assertTrue(texts.rivals(page).contains("Встреч в разряде WD нет"));
     }
 }

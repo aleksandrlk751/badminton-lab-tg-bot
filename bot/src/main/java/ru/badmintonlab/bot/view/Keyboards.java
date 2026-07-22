@@ -18,13 +18,10 @@ import java.util.List;
 @Component
 public class Keyboards {
 
-    /** Ограничение длины подписи кнопки, чтобы список результатов оставался читаемым. */
-    private static final int BUTTON_TEXT_LIMIT = 60;
-
     public InlineKeyboardMarkup mainMenu() {
         return InlineKeyboardMarkup.builder()
                 .keyboardRow(new InlineKeyboardRow(button("🔍 Найти игрока", CallbackData.MENU_SEARCH)))
-                .keyboardRow(new InlineKeyboardRow(button("⚔️ Сравнить (H2H)", CallbackData.MENU_H2H)))
+                .keyboardRow(new InlineKeyboardRow(button("🆚 Сравнить (H2H)", CallbackData.MENU_H2H)))
                 .keyboardRow(new InlineKeyboardRow(button("ℹ️ Помощь", CallbackData.MENU_HELP)))
                 .build();
     }
@@ -32,7 +29,7 @@ public class Keyboards {
     public InlineKeyboardMarkup searchResults(List<PlayerSearchResult> results) {
         List<InlineKeyboardRow> rows = new ArrayList<>();
         for (PlayerSearchResult r : results) {
-            rows.add(new InlineKeyboardRow(button(resultLabel(r), CallbackData.card(r.playerId()))));
+            rows.add(new InlineKeyboardRow(button(SearchButtonLabel.format(r), CallbackData.card(r.playerId()))));
         }
         return InlineKeyboardMarkup.builder().keyboard(rows).build();
     }
@@ -44,7 +41,7 @@ public class Keyboards {
                     button("🤺 Соперники", CallbackData.rivalsDefault(card.playerId()))));
         }
         rows.add(new InlineKeyboardRow(
-                button("⚔️ H2H", CallbackData.h2h(card.playerId())),
+                button("🆚 H2H", CallbackData.h2h(card.playerId())),
                 button("📈 История рейтинга", CallbackData.history(card.playerId()))));
         return InlineKeyboardMarkup.builder().keyboard(rows).build();
     }
@@ -52,20 +49,16 @@ public class Keyboards {
     public InlineKeyboardMarkup rivals(RivalsPage page) {
         List<InlineKeyboardRow> rows = new ArrayList<>();
 
-        // Переключатель дисциплин (если их больше одной)
-        List<Discipline> disciplines = page.availableDisciplines();
-        if (disciplines.size() > 1) {
-            InlineKeyboardRow disciplineRow = new InlineKeyboardRow();
-            for (Discipline d : disciplines) {
-                String text = d == page.discipline()
-                        ? "• " + DisciplineLabels.label(d)
-                        : DisciplineLabels.label(d);
-                disciplineRow.add(button(text, CallbackData.rivalsPage(page.playerId(), d, 0)));
-            }
-            rows.add(disciplineRow);
+        InlineKeyboardRow filterRow = new InlineKeyboardRow();
+        filterRow.add(button(
+                page.allDisciplines() ? "• Все" : "Все",
+                CallbackData.rivalsPage(page.playerId(), null, 0)));
+        for (Discipline d : page.availableDisciplines()) {
+            String label = d == page.discipline() ? "• " + d.name() : d.name();
+            filterRow.add(button(label, CallbackData.rivalsPage(page.playerId(), d, 0)));
         }
+        rows.add(filterRow);
 
-        // Пагинация
         if (page.totalPages() > 1) {
             InlineKeyboardRow nav = new InlineKeyboardRow();
             if (page.hasPrev()) {
@@ -80,24 +73,6 @@ public class Keyboards {
 
         rows.add(new InlineKeyboardRow(button("⬅️ К карточке", CallbackData.card(page.playerId()))));
         return InlineKeyboardMarkup.builder().keyboard(rows).build();
-    }
-
-    private String resultLabel(PlayerSearchResult r) {
-        StringBuilder sb = new StringBuilder(r.nick());
-        if (r.fullName() != null && !r.fullName().isBlank()) {
-            sb.append(" — ").append(r.fullName());
-        }
-        if (r.city() != null && !r.city().isBlank()) {
-            sb.append(" · ").append(r.city());
-        }
-        return truncate(sb.toString());
-    }
-
-    private String truncate(String text) {
-        if (text.length() <= BUTTON_TEXT_LIMIT) {
-            return text;
-        }
-        return text.substring(0, BUTTON_TEXT_LIMIT - 1) + "…";
     }
 
     private InlineKeyboardButton button(String text, String callbackData) {

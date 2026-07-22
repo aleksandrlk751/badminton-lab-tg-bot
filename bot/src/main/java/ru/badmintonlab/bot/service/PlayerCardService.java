@@ -7,9 +7,11 @@ import ru.badmintonlab.bot.model.LastTournamentInfo;
 import ru.badmintonlab.bot.model.PlayerCard;
 import ru.badmintonlab.bot.model.RatingLine;
 import ru.badmintonlab.bot.util.Names;
+import ru.badmintonlab.bot.util.TournamentResults;
 import ru.badmintonlab.core.domain.Discipline;
 import ru.badmintonlab.core.entity.Player;
 import ru.badmintonlab.core.entity.PlayerRating;
+import ru.badmintonlab.core.repository.MatchPlayerRepository;
 import ru.badmintonlab.core.repository.ParticipationRepository;
 import ru.badmintonlab.core.repository.PlayerRatingRepository;
 import ru.badmintonlab.core.repository.PlayerRepository;
@@ -23,29 +25,29 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Сборка карточки игрока (этап 4): профиль, парные рейтинги, последний турнир, дата слепка.
+ * Сборка карточки игрока: профиль, рейтинги S/D, последний турнир.
  */
 @Service
 public class PlayerCardService {
 
     private static final ZoneId MOSCOW = ZoneId.of("Europe/Moscow");
-
-    /** Парный фокус MVP: показываем рейтинги D/MD/WD/XD в этом порядке. */
-    private static final List<Discipline> CARD_DISCIPLINES =
-            List.of(Discipline.D, Discipline.MD, Discipline.WD, Discipline.XD);
+    private static final List<Discipline> CARD_DISCIPLINES = List.of(Discipline.S, Discipline.D);
 
     private final PlayerRepository playerRepository;
     private final PlayerRatingRepository playerRatingRepository;
     private final ParticipationRepository participationRepository;
+    private final MatchPlayerRepository matchPlayerRepository;
     private final SnapshotInfoService snapshotInfoService;
 
     public PlayerCardService(PlayerRepository playerRepository,
                              PlayerRatingRepository playerRatingRepository,
                              ParticipationRepository participationRepository,
+                             MatchPlayerRepository matchPlayerRepository,
                              SnapshotInfoService snapshotInfoService) {
         this.playerRepository = playerRepository;
         this.playerRatingRepository = playerRatingRepository;
         this.participationRepository = participationRepository;
+        this.matchPlayerRepository = matchPlayerRepository;
         this.snapshotInfoService = snapshotInfoService;
     }
 
@@ -87,9 +89,14 @@ public class PlayerCardService {
             return null;
         }
         LastTournamentView v = last.get(0);
+        String stage = v.getTournamentId() == null
+                ? null
+                : matchPlayerRepository.findLastStageOnTournament(playerId, v.getTournamentId()).orElse(null);
+        String resultLabel = TournamentResults.label(v.getPlace(), stage);
         return new LastTournamentInfo(
                 v.getName(),
                 v.getStartsAt() == null ? null : v.getStartsAt().atZone(MOSCOW).toLocalDate(),
-                v.getPlace());
+                v.getPlace(),
+                resultLabel);
     }
 }

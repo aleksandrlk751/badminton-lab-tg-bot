@@ -7,6 +7,8 @@ import java.time.Instant;
  */
 public interface LastTournamentView {
 
+    Long getTournamentId();
+
     String getName();
 
     Instant getStartsAt();

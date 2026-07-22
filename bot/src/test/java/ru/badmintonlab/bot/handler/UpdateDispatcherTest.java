@@ -20,6 +20,7 @@ import ru.badmintonlab.bot.view.Keyboards;
 import ru.badmintonlab.bot.view.Texts;
 import ru.badmintonlab.core.domain.Discipline;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,10 +29,6 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * Тесты диспетчера без Mockito (форк JVM на dev-машине недоступен, {@code forkCount=0}):
- * реальные объекты Telegram + простые фейки сервисов.
- */
 class UpdateDispatcherTest {
 
     private final FakeSearch search = new FakeSearch();
@@ -46,6 +43,7 @@ class UpdateDispatcherTest {
         assertEquals(1, res.size());
         SendMessage sm = assertInstanceOf(SendMessage.class, res.get(0));
         assertTrue(sm.getText().contains("Badminton LAB"));
+        assertTrue(sm.getText().contains("обновление ежедневно"));
         assertNotNull(sm.getReplyMarkup());
     }
 
@@ -54,7 +52,7 @@ class UpdateDispatcherTest {
         search.tooShort = true;
         SendMessage sm = assertInstanceOf(SendMessage.class,
                 dispatcher.dispatch(textUpdate(100L, "ab")).get(0));
-        assertTrue(sm.getText().contains("3 символа"));
+        assertTrue(sm.getText().contains("фамилию или ник"));
     }
 
     @Test
@@ -63,28 +61,30 @@ class UpdateDispatcherTest {
         search.results = List.of();
         SendMessage sm = assertInstanceOf(SendMessage.class,
                 dispatcher.dispatch(textUpdate(100L, "Иванов")).get(0));
-        assertTrue(sm.getText().contains("никого не нашёл"));
+        assertTrue(sm.getText().contains("ничего не найдено"));
     }
 
     @Test
     void searchReturnsResultsWithKeyboard() {
         search.tooShort = false;
-        search.results = List.of(new PlayerSearchResult(1L, "Nick", "Иванов Иван", "Москва"));
+        search.results = List.of(new PlayerSearchResult(
+                1L, "Nick", "Иванов", "Иван", null, "Москва", null, new BigDecimal("400")));
         SendMessage sm = assertInstanceOf(SendMessage.class,
                 dispatcher.dispatch(textUpdate(100L, "Иванов")).get(0));
+        assertTrue(sm.getText().contains("под критерии поиска"));
         assertNotNull(sm.getReplyMarkup());
     }
 
     @Test
     void cardCallbackEditsMessage() {
         card.card = Optional.of(sampleCard());
-        rival.disciplines = List.of(Discipline.MD);
+        rival.hasRivals = true;
 
         List<BotApiMethod<?>> res = dispatcher.dispatch(callbackUpdate("card:5", 100L, 7));
 
         assertEquals(2, res.size());
         EditMessageText edit = assertInstanceOf(EditMessageText.class, res.get(0));
-        assertTrue(edit.getText().contains("Rocket"));
+        assertTrue(edit.getText().contains("Иванов Иван"));
         assertInstanceOf(AnswerCallbackQuery.class, res.get(1));
     }
 
@@ -107,7 +107,7 @@ class UpdateDispatcherTest {
 
     @Test
     void rivalsDefaultWithoutRivalsAnswersAlert() {
-        rival.defaultDiscipline = Optional.empty();
+        rival.hasRivals = false;
         List<BotApiMethod<?>> res = dispatcher.dispatch(callbackUpdate("rv:5", 100L, 7));
         assertEquals(1, res.size());
         AnswerCallbackQuery answer = assertInstanceOf(AnswerCallbackQuery.class, res.get(0));
@@ -116,18 +116,25 @@ class UpdateDispatcherTest {
 
     @Test
     void rivalsPageEditsMessage() {
-        rival.page = new RivalsPage(5L, Discipline.MD,
+        rival.page = new RivalsPage(5L, "Иванов",
+                Discipline.MD,
                 List.of(new RivalRow(2L, "Foe", "Петров", "Москва", 2, 0)),
                 0, 8, 1, List.of(Discipline.MD));
 
-        List<BotApiMethod<?>> res = dispatcher.dispatch(callbackUpdate("rvp:5:MD:1", 100L, 7));
+        List<BotApiMethod<?>> res = dispatcher.dispatch(callbackUpdate("rvp:5:MD:0", 100L, 7));
 
         assertEquals(2, res.size());
         assertInstanceOf(EditMessageText.class, res.get(0));
         assertInstanceOf(AnswerCallbackQuery.class, res.get(1));
     }
 
-    // ----- Хелперы -----
+    @Test
+    void rivalsAllFilterCallback() {
+        rival.page = new RivalsPage(5L, "Иванов", null, List.of(), 0, 8, 0, List.of(Discipline.MD));
+        List<BotApiMethod<?>> res = dispatcher.dispatch(callbackUpdate("rvp:5:ALL:0", 100L, 7));
+        assertEquals(2, res.size());
+        assertInstanceOf(EditMessageText.class, res.get(0));
+    }
 
     private PlayerCard sampleCard() {
         return new PlayerCard(5L, "Rocket", "Иванов Иван", "Москва", List.of(), null, null);
@@ -155,14 +162,12 @@ class UpdateDispatcherTest {
         return update;
     }
 
-    // ----- Фейки сервисов -----
-
     private static final class FakeSearch extends PlayerSearchService {
         boolean tooShort;
         List<PlayerSearchResult> results = List.of();
 
         FakeSearch() {
-            super(null);
+            super(null, null);
         }
 
         @Override
@@ -180,7 +185,7 @@ class UpdateDispatcherTest {
         Optional<PlayerCard> card = Optional.empty();
 
         FakeCard() {
-            super(null, null, null, null);
+            super(null, null, null, null, null);
         }
 
         @Override
@@ -190,22 +195,16 @@ class UpdateDispatcherTest {
     }
 
     private static final class FakeRival extends RivalService {
-        List<Discipline> disciplines = List.of();
-        Optional<Discipline> defaultDiscipline = Optional.empty();
+        boolean hasRivals;
         RivalsPage page;
 
         FakeRival() {
-            super(null);
+            super(null, null);
         }
 
         @Override
-        public List<Discipline> disciplinesWithRivals(long playerId) {
-            return disciplines;
-        }
-
-        @Override
-        public Optional<Discipline> defaultDiscipline(long playerId) {
-            return defaultDiscipline;
+        public boolean hasRivals(long playerId) {
+            return hasRivals;
         }
 
         @Override

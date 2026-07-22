@@ -1,13 +1,20 @@
 package ru.badmintonlab.bot.service;
 
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.badmintonlab.bot.model.PlayerSearchResult;
 import ru.badmintonlab.bot.util.Names;
+import ru.badmintonlab.core.domain.Discipline;
 import ru.badmintonlab.core.entity.Player;
+import ru.badmintonlab.core.entity.PlayerRating;
+import ru.badmintonlab.core.repository.PlayerRatingRepository;
 import ru.badmintonlab.core.repository.PlayerRepository;
 
+import java.math.BigDecimal;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Нечёткий поиск игрока по нику/ФИО (этап 4).
@@ -15,16 +22,16 @@ import java.util.List;
 @Service
 public class PlayerSearchService {
 
-    /** Минимальная длина запроса (bg: pg_trgm устойчив от 3 символов). */
     public static final int MIN_QUERY_LENGTH = 3;
-
-    /** Максимум результатов в выдаче (BRIEF §5: до 5–10). */
     public static final int MAX_RESULTS = 10;
 
     private final PlayerRepository playerRepository;
+    private final PlayerRatingRepository playerRatingRepository;
 
-    public PlayerSearchService(PlayerRepository playerRepository) {
+    public PlayerSearchService(PlayerRepository playerRepository,
+                               PlayerRatingRepository playerRatingRepository) {
         this.playerRepository = playerRepository;
+        this.playerRatingRepository = playerRatingRepository;
     }
 
     public boolean isQueryTooShort(String rawQuery) {
@@ -43,11 +50,27 @@ public class PlayerSearchService {
     }
 
     private PlayerSearchResult toResult(Player p) {
+        Map<Discipline, BigDecimal> ratings = ratingsByDiscipline(p.getId());
         return new PlayerSearchResult(
                 p.getId(),
                 p.getNick(),
-                Names.fullName(p.getLastName(), p.getFirstName(), p.getPatronymic()),
-                p.getCity());
+                p.getLastName(),
+                p.getFirstName(),
+                p.getPatronymic(),
+                p.getCity(),
+                ratings.get(Discipline.S),
+                ratings.get(Discipline.D));
+    }
+
+    private Map<Discipline, BigDecimal> ratingsByDiscipline(long playerId) {
+        Map<Discipline, BigDecimal> map = new EnumMap<>(Discipline.class);
+        for (PlayerRating r : playerRatingRepository.findByIdPlayerId(playerId)) {
+            Discipline d = r.getId().getDiscipline();
+            if (d == Discipline.S || d == Discipline.D) {
+                map.put(d, r.getRating());
+            }
+        }
+        return map;
     }
 
     private String normalize(String raw) {

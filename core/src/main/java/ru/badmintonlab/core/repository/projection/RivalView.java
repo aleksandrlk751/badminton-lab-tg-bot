@@ -15,7 +15,7 @@ public interface RivalView {
 
     String getCity();
 
-    Short getWins();
+    Integer getWins();
 
-    Short getLosses();
+    Integer getLosses();
 }
