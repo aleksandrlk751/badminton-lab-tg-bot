@@ -24,6 +24,17 @@ final class TestMetrics {
                 new BigDecimal("0.3"),
                 new BigDecimal("0.3"),
                 new BigDecimal("10.0"),
-                12);
+                12,
+                new BigDecimal("15.0"),
+                gameAccentDefaults());
+    }
+
+    static ru.badmintonlab.core.config.GameAccentMetrics gameAccentDefaults() {
+        return new ru.badmintonlab.core.config.GameAccentMetrics(
+                180,
+                new BigDecimal("0.8"),
+                new BigDecimal("0.5"),
+                new BigDecimal("3.0"),
+                180);
     }
 }

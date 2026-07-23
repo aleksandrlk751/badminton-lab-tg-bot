@@ -19,6 +19,10 @@ public final class MessageEmoji {
     public static final String WIN_RATE = "\uD83D\uDCCA";
     /** Форма игрока (метрика Form). */
     public static final String FORM = "\uD83D\uDC4A";
+    /** Предпочтение в «Игровом акценте». */
+    public static final String GAME_ACCENT_PREFERENCE = "\uD83C\uDFAF";
+    /** Сильная сторона в «Игровом акценте». */
+    public static final String GAME_ACCENT_STRENGTH = "\uD83D\uDCAA";
 
     private MessageEmoji() {
     }

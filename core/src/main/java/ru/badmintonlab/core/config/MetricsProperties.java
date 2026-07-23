@@ -17,7 +17,9 @@ public record MetricsProperties(
         BigDecimal w2,
         BigDecimal w3,
         BigDecimal dScale,
-        int partnerHistoryMonths
+        int partnerHistoryMonths,
+        BigDecimal stabilitySurpriseThreshold,
+        GameAccentMetrics gameAccent
 ) {
     public MetricsProperties {
         if (halfLifeDays <= 0) {
@@ -32,6 +34,12 @@ public record MetricsProperties(
         }
         if (partnerHistoryMonths <= 0) {
             throw new IllegalArgumentException("partnerHistoryMonths must be positive");
+        }
+        if (stabilitySurpriseThreshold == null || stabilitySurpriseThreshold.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("stabilitySurpriseThreshold must be positive");
+        }
+        if (gameAccent == null) {
+            throw new IllegalArgumentException("gameAccent must be configured");
         }
     }
 }

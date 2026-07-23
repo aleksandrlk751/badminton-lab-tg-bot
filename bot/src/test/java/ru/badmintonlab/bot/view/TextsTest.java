@@ -44,6 +44,7 @@ class TextsTest {
                 List.of(new RatingLine(Discipline.S, new BigDecimal("320.0")),
                         new RatingLine(Discipline.D, new BigDecimal("535.0"))),
                 1.2,
+                null,
                 new LastTournamentInfo("Кубок LAB", LocalDate.of(2026, 6, 15), (short) 2, "2-е место"),
                 LocalDate.of(2026, 7, 20));
 
@@ -58,6 +59,26 @@ class TextsTest {
         assertTrue(text.contains(MessageEmoji.FORM + "  +1.2"), text);
         assertTrue(text.contains("2-е место"), text);
         assertFalse(text.contains("Данные на"), text);
+    }
+
+    @Test
+    void cardRendersGameAccentOnSeparateLines() {
+        var accent = new ru.badmintonlab.core.metrics.GameAccentResult(
+                ru.badmintonlab.core.domain.PairCompositionType.XD,
+                0.58,
+                14,
+                ru.badmintonlab.core.domain.PairCompositionType.WD,
+                2.3,
+                0.78);
+        PlayerCard card = new PlayerCard(
+                1L, "Rocket", "Иванов Иван", "Москва", List.of(), null, accent, null, null);
+
+        String text = texts.card(card);
+
+        assertTrue(text.contains("<b>Игровой акцент</b>"), text);
+        assertTrue(text.contains(MessageEmoji.GAME_ACCENT_PREFERENCE + "  микст · 58% · 14 игр за полгода"), text);
+        assertTrue(text.contains(MessageEmoji.GAME_ACCENT_STRENGTH + "  женские пары · +2.3 · "
+                + MessageEmoji.WIN + " 78%"), text);
     }
 
     @Test

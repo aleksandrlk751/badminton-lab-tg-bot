@@ -1,5 +1,7 @@
 package ru.badmintonlab.bot.model;
 
+import ru.badmintonlab.core.metrics.GameAccentResult;
+
 import java.time.LocalDate;
 import java.util.List;
 
@@ -14,6 +16,7 @@ public record PlayerCard(
         String city,
         List<RatingLine> ratings,
         Double form,
+        GameAccentResult gameAccent,
         LastTournamentInfo lastTournament,
         LocalDate snapshotDate
 ) {

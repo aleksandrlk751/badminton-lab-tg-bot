@@ -155,6 +155,7 @@ flowchart TB
 |---|---|
 | `PlayabilityIndexService` | Индекс сыгранности S |
 | `FormService` | Форма по дельтам |
+| `GameAccentService` | Игровой акцент (предпочтение + сильная сторона, MD/WD/XD) |
 | `PairRatingService` | Официальный `(A+B)/2`, прогнозный рейтинг пары |
 | `PairCompositionService` | Тип пары MD/WD/XD/UNKNOWN по полу двух игроков |
 | `ForecastService` | Прогноз P3 (логистика + blend H2H) |
@@ -271,6 +272,8 @@ flowchart TB
 |---|---|
 | `PlayerSearchService` / `PlayerSearchOperations` | Поиск pg_trgm |
 | `PlayerCardService` / `PlayerCardLoader` | Карточка игрока |
+| `PlayerFormService` | Форма 👊 для карточки и H2H |
+| `PlayerGameAccentService` | Игровой акцент 🎯/💪 для карточки |
 | `RivalService` / `RivalLookup` | Список соперников |
 | `H2hService` | H2H: W-L, матчи, метрики, тип пары (этап 6) |
 | `H2hLazyFetchService` | Lazy fetch с сайта при нехватке матчей |

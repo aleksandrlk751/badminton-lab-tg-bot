@@ -25,3 +25,10 @@ badminton-lab:
     w3: 0.3
     d-scale: 10.0
     partner-history-months: 12
+    stability-surprise-threshold: 15.0
+    game-accent:
+      half-life-days: 180
+      early-decay-max: 0.8
+      early-decay-power: 0.5
+      min-weight-sum: 3.0
+      display-window-days: 180

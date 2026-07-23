@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import ru.badmintonlab.core.domain.Discipline;
 import ru.badmintonlab.core.entity.Match;
+import ru.badmintonlab.core.repository.projection.GameAccentMatchView;
 import ru.badmintonlab.core.repository.projection.H2hMatchView;
 import ru.badmintonlab.core.repository.projection.RatingDeltaView;
 
@@ -51,4 +52,24 @@ public interface H2hRepository extends JpaRepository<Match, Long> {
             """)
     List<RatingDeltaView> findRatingDeltas(@Param("playerId") long playerId,
                                            @Param("disciplines") Collection<Discipline> disciplines);
+
+    /**
+     * Парные матчи игрока с полом партнёра на той же стороне — для {@link ru.badmintonlab.core.metrics.GameAccentService}.
+     */
+    @Query("""
+            SELECT m.playedAt AS playedAt, mp.ratingDelta AS ratingDelta,
+                   p.sex AS playerSex, partner.sex AS partnerSex
+            FROM MatchPlayer mp
+            JOIN Match m ON m.id = mp.id.matchId
+            JOIN Player p ON p.id = mp.id.playerId
+            JOIN MatchPlayer mpPartner ON mpPartner.id.matchId = m.id
+                AND mpPartner.side = mp.side AND mpPartner.id.playerId <> mp.id.playerId
+            JOIN Player partner ON partner.id = mpPartner.id.playerId
+            WHERE mp.id.playerId = :playerId
+              AND m.discipline IN :disciplines
+              AND mp.ratingDelta IS NOT NULL
+            ORDER BY m.playedAt DESC
+            """)
+    List<GameAccentMatchView> findAccentMatches(@Param("playerId") long playerId,
+                                                @Param("disciplines") Collection<Discipline> disciplines);
 }

@@ -7,6 +7,7 @@ import ru.badmintonlab.bot.model.PlayerCard;
 import ru.badmintonlab.bot.model.RatingLine;
 import ru.badmintonlab.bot.model.RivalRow;
 import ru.badmintonlab.bot.model.RivalsPage;
+import ru.badmintonlab.core.metrics.GameAccentResult;
 import ru.badmintonlab.bot.util.Names;
 import ru.badmintonlab.bot.util.ProfileLinks;
 
@@ -229,10 +230,53 @@ public class Texts {
                     .append(formatForm(card.form())).append('\n');
         }
 
+        if (card.gameAccent() != null) {
+            appendGameAccent(sb, card.gameAccent());
+        }
+
         if (card.lastTournament() != null) {
             appendLastTournament(sb, card.lastTournament());
         }
         return sb.toString().trim();
+    }
+
+    private void appendGameAccent(StringBuilder sb, GameAccentResult accent) {
+        sb.append("\n\n<b>Игровой акцент</b>\n");
+        sb.append(MessageEmoji.GAME_ACCENT_PREFERENCE).append("  ")
+                .append(escape(PairCompositionLabels.label(accent.preferenceType())))
+                .append(" · ")
+                .append(formatPercent(accent.preferenceShare()))
+                .append(" · ")
+                .append(gamesLabel(accent.preferenceGamesInWindow()))
+                .append(" за полгода")
+                .append('\n');
+        sb.append(MessageEmoji.GAME_ACCENT_STRENGTH).append("  ")
+                .append(escape(PairCompositionLabels.label(accent.strengthType())))
+                .append(" · ")
+                .append(formatForm(accent.strengthAvgDelta()))
+                .append(" · ")
+                .append(MessageEmoji.WIN).append(' ')
+                .append(formatPercent(accent.strengthWinRate()))
+                .append('\n');
+    }
+
+    static String gamesLabel(int count) {
+        int mod100 = count % 100;
+        int mod10 = count % 10;
+        if (mod100 >= 11 && mod100 <= 14) {
+            return count + " игр";
+        }
+        if (mod10 == 1) {
+            return count + " игра";
+        }
+        if (mod10 >= 2 && mod10 <= 4) {
+            return count + " игры";
+        }
+        return count + " игр";
+    }
+
+    private static String formatPercent(double share) {
+        return Math.round(share * 100) + "%";
     }
 
     private void appendLastTournament(StringBuilder sb, LastTournamentInfo t) {
