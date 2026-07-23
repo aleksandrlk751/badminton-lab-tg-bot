@@ -208,7 +208,7 @@ r77 запускается пользователем (heavy live-scrape).
 - Flyway **V2**: `player.sex` (`M`/`F`, nullable).
 - `PlayerSexUpsertService` / `PlayerSexSyncService` / `PlayerSexProfileFallbackService` — после `upsertPlayers` в `SnapshotService`.
 - `SexSyncStartupRunner` — разовый sync (`SNAPSHOT_SYNC_SEX_ON_STARTUP=true`).
-- Fallback при `sex IS NULL`: (1) локальный слепок r77 — рейтинги и участия; (2) **профиль игрока на сайте** — участия всех регионов.
+- Fallback при `sex IS NULL`: (1) локальный слепок r77 — рейтинги и участия; (2) **профиль игрока на сайте** — участия всех регионов; (3) **ФИО из БД** (офлайн) — отчество, типичные русские имена; `NameSexStartupRunner` (`SNAPSHOT_INFER_SEX_FROM_NAMES_ON_STARTUP=true`).
 - `PairCompositionService` в `core.metrics` (MD/WD/XD/UNKNOWN).
 - Unit-тесты парсера, `PairCompositionService`, `PlayerSexInference`; [`spike-parser.md`](spike-parser.md) обновлён.
 
@@ -216,10 +216,11 @@ r77 запускается пользователем (heavy live-scrape).
 - Справочник — **authoritative**: повторный прогон перезаписывает `sex` из списка M/F (не «мигает» при неизменном источнике).
 - Справочник: **singles** (`players/?sex_m/f`) + **doubles** (`players/?type=d&sex_m/f`); объединение по ID.
 - Пагинация списка — AJAX `POST /?ajax` с телом `players={data-rand}&limit=N` в той же сессии, что и GET первой страницы.
-- Fallback из дисциплин — только если `sex IS NULL`: сначала локальные данные слепка r77, затем SSR-профиль `/players/{id}` (участия без `cities[]`); generic D/XD и X* — не используются; конфликт M+W → не заполняем.
+- Fallback из дисциплин — только если `sex IS NULL`: сначала локальные данные слепка r77, затем SSR-профиль `/players/{id}` (участия без `cities[]`), затем ФИО (`PlayerSexInference.inferFromName`); generic D/XD и X* — не используются; конфликт M+W или имя+отчество → не заполняем.
+- Fallback по ФИО — **не authoritative** (эвристика); справочник при sync перезаписывает; ручные override по ID — в `PlayerSexUpsertService.MANUAL_SEX_OVERRIDES`.
 
 **DoD:**
-- [x] На дымовом прогоне r77 ≥90% игроков имеют `sex` (**97,4%** на полном sync 2026-07-23; ~130 без пола — generic D/XD).
+- [x] На дымовом прогоне r77 ≥90% игроков имеют `sex` (**99,96%** после fallback по ФИО 2026-07-23: 4913/4915; без пола — 2 записи: неоднозначное имя / нет ФИО).
 - [ ] 10 эталонных игроков (5M + 5F) сверены вручную со списками на сайте.
 - [ ] Повторный прогон идемпотентен (пол не «мигает»).
 - [x] `PairCompositionService` покрыт unit-тестами (все комбинации M/F/NULL).

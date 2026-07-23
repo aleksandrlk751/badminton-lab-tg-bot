@@ -16,6 +16,7 @@ import ru.badmintonlab.parser.model.PlayerProfileSexEvidence;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Идемпотентная запись пола игрока: справочник — authoritative-источник;
@@ -23,6 +24,11 @@ import java.util.List;
  */
 @Service
 public class PlayerSexUpsertService {
+
+    /** Ручные исключения, где эвристика по имени не применима (подтверждено вручную). */
+    private static final Map<Long, PlayerSex> MANUAL_SEX_OVERRIDES = Map.of(
+            24294L, PlayerSex.M
+    );
 
     private final PlayerRepository playerRepository;
     private final PlayerRatingRepository ratingRepository;
@@ -63,6 +69,23 @@ public class PlayerSexUpsertService {
         int updated = 0;
         for (Player player : playerRepository.findBySexIsNull()) {
             PlayerSex inferred = inferSexFromLocalData(player.getId());
+            if (inferred != null) {
+                player.setSex(inferred);
+                playerRepository.save(player);
+                updated++;
+            }
+        }
+        return updated;
+    }
+
+    /**
+     * Fallback по ФИО из локальной БД (офлайн, без сайта). Только если {@code sex IS NULL}.
+     */
+    @Transactional
+    public int inferMissingFromNames() {
+        int updated = 0;
+        for (Player player : playerRepository.findBySexIsNull()) {
+            PlayerSex inferred = inferSexFromNameFields(player);
             if (inferred != null) {
                 player.setSex(inferred);
                 playerRepository.save(player);
@@ -132,5 +155,14 @@ public class PlayerSexUpsertService {
         }
         return PlayerSexInference.inferFromCategoryCodes(
                 participationRepository.findTournamentCategoryCodesByPlayerId(playerId));
+    }
+
+    private PlayerSex inferSexFromNameFields(Player player) {
+        PlayerSex manual = MANUAL_SEX_OVERRIDES.get(player.getId());
+        if (manual != null) {
+            return manual;
+        }
+        return PlayerSexInference.inferFromName(
+                player.getFirstName(), player.getLastName(), player.getPatronymic());
     }
 }

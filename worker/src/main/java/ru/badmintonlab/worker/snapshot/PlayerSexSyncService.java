@@ -35,9 +35,10 @@ public class PlayerSexSyncService {
         int femalesUpdated = upsertDirectory(regionCode, PlayerSex.F);
         int inferredLocal = sexUpsertService.inferMissingFromLocalDisciplines();
         int inferredProfile = profileFallbackService.inferMissingFromProfiles();
+        int inferredNames = sexUpsertService.inferMissingFromNames();
 
         PlayerSexSyncMetrics metrics = new PlayerSexSyncMetrics(
-                malesUpdated, femalesUpdated, inferredLocal, inferredProfile);
+                malesUpdated, femalesUpdated, inferredLocal, inferredProfile, inferredNames);
         log.info("Синхронизация пола региона {}: {}", regionCode, metrics);
         return metrics;
     }
@@ -55,14 +56,16 @@ public class PlayerSexSyncService {
             int malesUpdated,
             int femalesUpdated,
             int inferredFromLocalDisciplines,
-            int inferredFromProfileParticipations) {
+            int inferredFromProfileParticipations,
+            int inferredFromNames) {
 
         @Override
         public String toString() {
             return "мужчин обновлено=" + malesUpdated
                     + ", женщин обновлено=" + femalesUpdated
                     + ", выведено из слепка=" + inferredFromLocalDisciplines
-                    + ", выведено из профилей=" + inferredFromProfileParticipations;
+                    + ", выведено из профилей=" + inferredFromProfileParticipations
+                    + ", выведено из ФИО=" + inferredFromNames;
         }
     }
 }

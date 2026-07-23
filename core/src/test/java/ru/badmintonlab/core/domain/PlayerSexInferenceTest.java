@@ -24,4 +24,24 @@ class PlayerSexInferenceTest {
         assertNull(PlayerSexInference.inferFromCategoryCodes(List.of("D", "DB+", "XDB")));
         assertNull(PlayerSexInference.inferFromCategoryCodes(List.of("WDB", "MDB")));
     }
+
+    @Test
+    void infersFromPatronymic() {
+        assertEquals(PlayerSex.M, PlayerSexInference.inferFromPatronymic("Сергеевич"));
+        assertEquals(PlayerSex.M, PlayerSexInference.inferFromPatronymic("Ильич"));
+        assertEquals(PlayerSex.F, PlayerSexInference.inferFromPatronymic("Дмитриевна"));
+        assertEquals(PlayerSex.F, PlayerSexInference.inferFromPatronymic("Алексанровна"));
+        assertNull(PlayerSexInference.inferFromPatronymic(null));
+    }
+
+    @Test
+    void infersFromName() {
+        assertEquals(PlayerSex.M, PlayerSexInference.inferFromName("Дмитрий", "Ярошинский", "Александрович"));
+        assertEquals(PlayerSex.F, PlayerSexInference.inferFromName("Анна", "Козлова", null));
+        assertEquals(PlayerSex.F, PlayerSexInference.inferFromName(null, "Юлия", null));
+        assertEquals(PlayerSex.M, PlayerSexInference.inferFromName("Даниэле", "Сордже", null));
+        assertNull(PlayerSexInference.inferFromName("Вита", "Магнат", null));
+        assertNull(PlayerSexInference.inferFromName(null, "36724", null));
+        assertNull(PlayerSexInference.inferFromName("Иван", "Петров", "Ивановна"));
+    }
 }

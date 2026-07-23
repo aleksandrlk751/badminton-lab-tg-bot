@@ -177,5 +177,6 @@ badminton4u:game:{tournamentId}:{playedAt}:{sortedA}:vs{sortedB}:{scoreSets}:{st
 | **Worker** | `PlayerDirectoryLoader.loadAll(region, sex, listType)` — singles + doubles; `PlayerSexSyncService` после профилей в слепке |
 | **Fallback пола (локально)** | `PlayerSexInference`: MS/MD/WS/WD из `player_rating` и `pair.discipline` участий слепка r77; код категории турнира (WDB/MDA/…); D/XD/X* — не используются |
 | **Fallback пола (профиль)** | `PlayerProfileSexEvidenceParser` — участия и разряды из SSR `/players/{id}` (**все регионы**); `PlayerSexProfileFallbackService` после локального fallback |
+| **Fallback пола (ФИО, офлайн)** | `PlayerSexInference.inferFromName` — отчество (`-ович/-овна`), словарь типичных имён; при пустом `first_name` — `last_name`; конфликт → не заполняем; `NameSexStartupRunner` (`SNAPSHOT_INFER_SEX_FROM_NAMES_ON_STARTUP=true`) |
 
 Если расхождение — укажите URL, поле и значение на сайте; поправим парсер или fixture.
