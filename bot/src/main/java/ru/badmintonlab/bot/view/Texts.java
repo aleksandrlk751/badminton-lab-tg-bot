@@ -230,6 +230,10 @@ public class Texts {
                     .append(formatForm(card.form())).append('\n');
         }
 
+        if (card.stabilityEmoji() != null) {
+            sb.append(card.stabilityEmoji()).append('\n');
+        }
+
         if (card.gameAccent() != null) {
             appendGameAccent(sb, card.gameAccent());
         }

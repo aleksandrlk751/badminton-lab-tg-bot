@@ -39,6 +39,7 @@ public class PlayerCardService implements PlayerCardLoader {
     private final MatchPlayerRepository matchPlayerRepository;
     private final SnapshotInfoService snapshotInfoService;
     private final PlayerFormService playerFormService;
+    private final PlayerStabilityService playerStabilityService;
     private final PlayerGameAccentService playerGameAccentService;
 
     public PlayerCardService(PlayerRepository playerRepository,
@@ -47,6 +48,7 @@ public class PlayerCardService implements PlayerCardLoader {
                              MatchPlayerRepository matchPlayerRepository,
                              SnapshotInfoService snapshotInfoService,
                              PlayerFormService playerFormService,
+                             PlayerStabilityService playerStabilityService,
                              PlayerGameAccentService playerGameAccentService) {
         this.playerRepository = playerRepository;
         this.playerRatingRepository = playerRatingRepository;
@@ -54,6 +56,7 @@ public class PlayerCardService implements PlayerCardLoader {
         this.matchPlayerRepository = matchPlayerRepository;
         this.snapshotInfoService = snapshotInfoService;
         this.playerFormService = playerFormService;
+        this.playerStabilityService = playerStabilityService;
         this.playerGameAccentService = playerGameAccentService;
     }
 
@@ -70,6 +73,7 @@ public class PlayerCardService implements PlayerCardLoader {
                 p.getCity(),
                 ratings(p.getId()),
                 formValue(p.getId()),
+                playerStabilityService.stabilityEmojiForCard(p.getId()).orElse(null),
                 playerGameAccentService.accentForCard(p.getId()).orElse(null),
                 lastTournament(p.getId()),
                 snapshotInfoService.lastSnapshotDate().orElse(null));

@@ -8,6 +8,7 @@ import ru.badmintonlab.bot.model.RivalRow;
 import ru.badmintonlab.bot.model.RivalsPage;
 import ru.badmintonlab.bot.model.LastTournamentInfo;
 import ru.badmintonlab.core.domain.Discipline;
+import ru.badmintonlab.core.metrics.StabilityLevel;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -45,6 +46,7 @@ class TextsTest {
                         new RatingLine(Discipline.D, new BigDecimal("535.0"))),
                 1.2,
                 null,
+                null,
                 new LastTournamentInfo("Кубок LAB", LocalDate.of(2026, 6, 15), (short) 2, "2-е место"),
                 LocalDate.of(2026, 7, 20));
 
@@ -62,6 +64,18 @@ class TextsTest {
     }
 
     @Test
+    void cardRendersStabilityEmojiWithoutLabel() {
+        PlayerCard card = new PlayerCard(
+                1L, "Rocket", "Иванов Иван", "Москва", List.of(), 1.2,
+                StabilityLevel.STABLE.emoji(), null, null, null);
+
+        String text = texts.card(card);
+
+        assertTrue(text.contains(MessageEmoji.FORM + "  +1.2"), text);
+        assertTrue(text.contains(StabilityLevel.STABLE.emoji()), text);
+    }
+
+    @Test
     void cardRendersGameAccentOnSeparateLines() {
         var accent = new ru.badmintonlab.core.metrics.GameAccentResult(
                 ru.badmintonlab.core.domain.PairCompositionType.XD,
@@ -71,13 +85,13 @@ class TextsTest {
                 2.3,
                 0.78);
         PlayerCard card = new PlayerCard(
-                1L, "Rocket", "Иванов Иван", "Москва", List.of(), null, accent, null, null);
+                1L, "Rocket", "Иванов Иван", "Москва", List.of(), null, null, accent, null, null);
 
         String text = texts.card(card);
 
         assertTrue(text.contains("<b>Игровой акцент</b>"), text);
         assertTrue(text.contains(MessageEmoji.GAME_ACCENT_PREFERENCE + "  микст · 58% · 14 игр за полгода"), text);
-        assertTrue(text.contains(MessageEmoji.GAME_ACCENT_STRENGTH + "  женские пары · +2.3 · "
+        assertTrue(text.contains(MessageEmoji.GAME_ACCENT_STRENGTH + "  женская пара · +2.3 · "
                 + MessageEmoji.WIN + " 78%"), text);
     }
 

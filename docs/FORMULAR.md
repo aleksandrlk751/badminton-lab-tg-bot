@@ -209,10 +209,26 @@ Stability = 100 · ( Σ_t S^within_t · w(Δt_t) + Σ_k S^between_k · w(Δt_{t_
 `t_k`. Один турнир в выборке → только слагаемые `S^within`. Нет матчей с `|δ| > ε` — метрика не
 показывается.
 
-**Константы:** `ε`, `H`, `W_max`, `α`. **Локализация:** `StabilityService` (**планируется**),
-вход — `match_player.rating_delta` + `tournament.starts_at`, группировка по `tournament_id`.
+**Константы:** `ε`, `H`, `W_max`, `α`, пороги зон (§2.8.1). **Локализация:** `StabilityService`
+(`core.metrics`, **реализовано**), `StabilityLevel`, `PlayerStabilityService` → карточка бота.
+Вход — `match_player.rating_delta` + `tournament.starts_at`, группировка по `tournament_id`.
 **Описание:** «насколько стабильно выступает на своём уровне»; смена сильности турнира между
 событиями не штрафуется, если тон каждого турнира однороден.
+
+#### 2.8.1 Отображение на карточке (emoji-зоны)
+
+Числовой `Stability` **не показываем** — только emoji по порогам (калибровка на слепке r77, ε=10):
+
+| Зона | Stability | Emoji | Дефолт порога |
+|---|---|---|---|
+| 1 — совсем нестабилен | `[0, 60)` | 🔴 | — |
+| 2 — нестабилен | `[60, 75)` | 🟠 | `zone2-min = 60` |
+| 3 — середина | `[75, 85)` | 🟡 | `zone3-min = 75` |
+| 4 — стабилен | `[85, 90)` | 🟢 | `zone4-min = 85` |
+| 5 — супер стабилен | `[90, 100]` | 🔥 | `zone5-min = 90` |
+
+**Локализация:** `StabilityLevel#fromScore`, `StabilityZoneMetrics`, `Texts.card()`.
+Строка скрыта, если нет матчей с `|δ| > ε`.
 
 ---
 
@@ -228,7 +244,11 @@ Stability = 100 · ( Σ_t S^within_t · w(Δt_t) + Σ_k S^between_k · w(Δt_{t_
 | `H` | `180` | `half-life-days` | `halfLifeDays` | 2.1, 2.2, 2.3, 2.4, 2.8 | Период полураспада (дни) для `S`, `Form`, `Stability` |
 | `W_max` | `0.8` | `early-decay-max` | `earlyDecayMax` | 2.1, 2.2, 2.8 | Потолок веса свежести в начале первого периода `(0.5, 1]` |
 | `α` | `0.5` | `early-decay-power` | `earlyDecayPower` | 2.1, 2.2, 2.8 | Крутизна спада веса в первом периоде (`> 0`; `1` = прежняя форма кривой) |
-| `ε` | `15.0` | `stability-surprise-threshold` | `stabilitySurpriseThreshold` | 2.8 | Порог \|δ\| для учёта сюрприза матча |
+| `ε` | `10.0` | `stability-surprise-threshold` | `stabilitySurpriseThreshold` | 2.8 | Порог \|δ\| для учёта сюрприза матча |
+| `zone2` | `60` | `stability-zones.zone2-min` | `stabilityZones.zone2Min` | 2.8.1 | Нижняя граница зоны 🟠 |
+| `zone3` | `75` | `stability-zones.zone3-min` | `stabilityZones.zone3Min` | 2.8.1 | Нижняя граница зоны 🟡 |
+| `zone4` | `85` | `stability-zones.zone4-min` | `stabilityZones.zone4Min` | 2.8.1 | Нижняя граница зоны 🟢 |
+| `zone5` | `90` | `stability-zones.zone5-min` | `stabilityZones.zone5Min` | 2.8.1 | Нижняя граница зоны 🔥 |
 | `k` | `0.5` | `form-k` | `formK` | 2.3, 2.4 | Вклад формы в эффективный рейтинг |
 | `S_ref` | `1.0` | `s-ref` | `sRef` | 2.3, 2.4 | Опорная сыгранность для веса смешивания `w` |
 | `Bmax` | `20.0` | `b-max` | `bMax` | 2.4 | Максимальный бонус парного рейтинга за сыгранность |
@@ -256,7 +276,6 @@ Stability = 100 · ( Σ_t S^within_t · w(Δt_t) + Σ_k S^between_k · w(Δt_{t_
 |---|---|---|
 | `S_ref_partner` | нет отдельного ключа в конфиге | добавить `badminton-lab.metrics.s-ref-partner` при реализации score (этап 7) либо переиспользовать `s-ref` — решить явно |
 | boost `1.2` | хардкод в формуле (§2.5) | вынести в конфиг (`partner-boost`) при реализации `PartnerScoreService` |
-| `stabilitySurpriseThreshold` | ключ в §3, поле в `MetricsProperties` ✓; `StabilityService` — §2.8, **планируется** | реализовать `StabilityService` и вывод на карточке |
 
 ---
 

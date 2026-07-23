@@ -19,6 +19,7 @@ public record MetricsProperties(
         BigDecimal dScale,
         int partnerHistoryMonths,
         BigDecimal stabilitySurpriseThreshold,
+        StabilityZoneMetrics stabilityZones,
         GameAccentMetrics gameAccent
 ) {
     public MetricsProperties {
@@ -37,6 +38,9 @@ public record MetricsProperties(
         }
         if (stabilitySurpriseThreshold == null || stabilitySurpriseThreshold.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("stabilitySurpriseThreshold must be positive");
+        }
+        if (stabilityZones == null) {
+            throw new IllegalArgumentException("stabilityZones must be configured");
         }
         if (gameAccent == null) {
             throw new IllegalArgumentException("gameAccent must be configured");

@@ -8,6 +8,7 @@ import ru.badmintonlab.core.entity.Match;
 import ru.badmintonlab.core.repository.projection.GameAccentMatchView;
 import ru.badmintonlab.core.repository.projection.H2hMatchView;
 import ru.badmintonlab.core.repository.projection.RatingDeltaView;
+import ru.badmintonlab.core.repository.projection.StabilityMatchView;
 
 import java.util.Collection;
 import java.util.List;
@@ -52,6 +53,19 @@ public interface H2hRepository extends JpaRepository<Match, Long> {
             """)
     List<RatingDeltaView> findRatingDeltas(@Param("playerId") long playerId,
                                            @Param("disciplines") Collection<Discipline> disciplines);
+
+    @Query("""
+            SELECT m.tournamentId AS tournamentId, t.startsAt AS tournamentStartsAt,
+                   mp.ratingDelta AS ratingDelta
+            FROM Match m
+            JOIN Tournament t ON t.id = m.tournamentId
+            JOIN MatchPlayer mp ON mp.id.matchId = m.id AND mp.id.playerId = :playerId
+            WHERE m.discipline IN :disciplines
+              AND mp.ratingDelta IS NOT NULL
+            ORDER BY t.startsAt, m.id
+            """)
+    List<StabilityMatchView> findStabilityMatches(@Param("playerId") long playerId,
+                                                  @Param("disciplines") Collection<Discipline> disciplines);
 
     /**
      * Парные матчи игрока с полом партнёра на той же стороне — для {@link ru.badmintonlab.core.metrics.GameAccentService}.

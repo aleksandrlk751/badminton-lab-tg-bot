@@ -16,6 +16,7 @@ public record PlayerCard(
         String city,
         List<RatingLine> ratings,
         Double form,
+        String stabilityEmoji,
         GameAccentResult gameAccent,
         LastTournamentInfo lastTournament,
         LocalDate snapshotDate

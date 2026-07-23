@@ -25,7 +25,12 @@ badminton-lab:
     w3: 0.3
     d-scale: 10.0
     partner-history-months: 12
-    stability-surprise-threshold: 15.0
+    stability-surprise-threshold: 10.0
+    stability-zones:
+      zone2-min: 60
+      zone3-min: 75
+      zone4-min: 85
+      zone5-min: 90
     game-accent:
       half-life-days: 180
       early-decay-max: 0.8
