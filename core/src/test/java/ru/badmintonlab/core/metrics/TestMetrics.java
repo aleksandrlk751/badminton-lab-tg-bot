@@ -25,17 +25,17 @@ final class TestMetrics {
                 new BigDecimal("0.3"),
                 new BigDecimal("10.0"),
                 12,
-                new BigDecimal("10.0"),
+                new BigDecimal("11.5"),
                 stabilityZoneDefaults(),
                 gameAccentDefaults());
     }
 
     static ru.badmintonlab.core.config.StabilityZoneMetrics stabilityZoneDefaults() {
         return new ru.badmintonlab.core.config.StabilityZoneMetrics(
-                new BigDecimal("60"),
-                new BigDecimal("75"),
-                new BigDecimal("85"),
-                new BigDecimal("90"));
+                new BigDecimal("70"),
+                new BigDecimal("80"),
+                new BigDecimal("86"),
+                new BigDecimal("92"));
     }
 
     static ru.badmintonlab.core.config.GameAccentMetrics gameAccentDefaults() {

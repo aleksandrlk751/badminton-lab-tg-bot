@@ -26,7 +26,8 @@ class StabilityServiceTest {
                 event(2, T2, -2.0),
                 event(2, T2, 0.0));
         double stability = service.stability(NOW, events).orElseThrow();
-        assertTrue(stability >= 95.0, "expected high stability, got " + stability);
+        assertTrue(stability >= 90.0 && stability < 98.0,
+                "neutral follow-up gives between-score 0.8, got " + stability);
     }
 
     @Test
@@ -64,6 +65,24 @@ class StabilityServiceTest {
     void withinScoreMixedSigns() {
         assertEquals(0.0, StabilityService.withinScore(List.of(20.0, -18.0), 10.0), 1e-9);
         assertEquals(1.0, StabilityService.withinScore(List.of(20.0, 18.0), 10.0), 1e-9);
+    }
+
+    @Test
+    void betweenScoreOppositeToneIsZero() {
+        assertEquals(0.0, StabilityService.betweenScore(List.of(20.0, 18.0), List.of(-20.0, -17.0), 10.0), 1e-9);
+    }
+
+    @Test
+    void betweenScoreSameToneIsOne() {
+        assertEquals(1.0, StabilityService.betweenScore(List.of(20.0, 18.0), List.of(19.0, 16.0), 10.0), 1e-9);
+        assertEquals(1.0, StabilityService.betweenScore(List.of(-20.0, -17.0), List.of(-19.0, -16.0), 10.0), 1e-9);
+    }
+
+    @Test
+    void betweenScoreNeutralTournamentIsEightyPercent() {
+        assertEquals(0.8, StabilityService.betweenScore(List.of(20.0, 18.0), List.of(-2.0, 0.0), 10.0), 1e-9);
+        assertEquals(0.8, StabilityService.betweenScore(List.of(-2.0, 0.0), List.of(20.0, 18.0), 10.0), 1e-9);
+        assertEquals(0.8, StabilityService.betweenScore(List.of(-2.0, 0.0), List.of(1.0, -1.0), 10.0), 1e-9);
     }
 
     private static StabilityMatchEvent event(long tournamentId, Instant at, double delta) {

@@ -13,14 +13,14 @@ class StabilityLevelTest {
 
     @Test
     void mapsScoreToFiveZones() {
-        assertEquals(StabilityLevel.VERY_UNSTABLE, StabilityLevel.fromScore(59.9, ZONES));
-        assertEquals(StabilityLevel.UNSTABLE, StabilityLevel.fromScore(60.0, ZONES));
-        assertEquals(StabilityLevel.UNSTABLE, StabilityLevel.fromScore(74.9, ZONES));
-        assertEquals(StabilityLevel.MIDDLE, StabilityLevel.fromScore(75.0, ZONES));
-        assertEquals(StabilityLevel.MIDDLE, StabilityLevel.fromScore(84.9, ZONES));
-        assertEquals(StabilityLevel.STABLE, StabilityLevel.fromScore(85.0, ZONES));
-        assertEquals(StabilityLevel.STABLE, StabilityLevel.fromScore(89.9, ZONES));
-        assertEquals(StabilityLevel.SUPER_STABLE, StabilityLevel.fromScore(90.0, ZONES));
+        assertEquals(StabilityLevel.VERY_UNSTABLE, StabilityLevel.fromScore(69.9, ZONES));
+        assertEquals(StabilityLevel.UNSTABLE, StabilityLevel.fromScore(70.0, ZONES));
+        assertEquals(StabilityLevel.UNSTABLE, StabilityLevel.fromScore(79.9, ZONES));
+        assertEquals(StabilityLevel.MIDDLE, StabilityLevel.fromScore(80.0, ZONES));
+        assertEquals(StabilityLevel.MIDDLE, StabilityLevel.fromScore(85.9, ZONES));
+        assertEquals(StabilityLevel.STABLE, StabilityLevel.fromScore(86.0, ZONES));
+        assertEquals(StabilityLevel.STABLE, StabilityLevel.fromScore(91.9, ZONES));
+        assertEquals(StabilityLevel.SUPER_STABLE, StabilityLevel.fromScore(92.0, ZONES));
         assertEquals(StabilityLevel.SUPER_STABLE, StabilityLevel.fromScore(100.0, ZONES));
     }
 

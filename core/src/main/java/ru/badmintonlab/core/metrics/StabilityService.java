@@ -19,6 +19,9 @@ import java.util.Optional;
 @Service
 public class StabilityService {
 
+    /** {@code S^between} при нейтральном турнире в паре (§2.8 {@code docs/FORMULAR.md}). */
+    static final double NEUTRAL_BETWEEN_SCORE = 0.8;
+
     private final MetricsProperties metrics;
 
     public StabilityService(MetricsProperties metrics) {
@@ -30,6 +33,12 @@ public class StabilityService {
      * @param events    матчи с δ и датой турнира; пустой набор → empty
      */
     public Optional<Double> stability(Instant reference, Collection<StabilityMatchEvent> events) {
+        return stability(reference, events, NEUTRAL_BETWEEN_SCORE);
+    }
+
+    /** Для калибровки: тот же расчёт с другим {@code S} при нейтральном турнире. */
+    Optional<Double> stability(Instant reference, Collection<StabilityMatchEvent> events,
+                               double neutralBetweenScore) {
         if (events == null || events.isEmpty()) {
             return Optional.empty();
         }
@@ -59,7 +68,7 @@ public class StabilityService {
         for (int i = 1; i < tournaments.size(); i++) {
             TournamentBlock prev = tournaments.get(i - 1);
             TournamentBlock curr = tournaments.get(i);
-            double between = betweenScore(prev.deltas(), curr.deltas(), epsilon);
+            double between = betweenScore(prev.deltas(), curr.deltas(), epsilon, neutralBetweenScore);
             double w = MetricMath.decayWeight(reference, curr.tournamentAt(), halfLife, earlyMax, earlyPower);
             weightSum += w;
             scoreSum += between * w;
@@ -74,6 +83,10 @@ public class StabilityService {
     /** Стабильность относительно текущего момента. */
     public Optional<Double> stability(Collection<StabilityMatchEvent> events) {
         return stability(Instant.now(), events);
+    }
+
+    Optional<Double> stability(Collection<StabilityMatchEvent> events, double neutralBetweenScore) {
+        return stability(Instant.now(), events, neutralBetweenScore);
     }
 
     static double withinScore(List<Double> deltas, double epsilon) {
@@ -93,10 +106,18 @@ public class StabilityService {
     }
 
     static double betweenScore(List<Double> prevDeltas, List<Double> currDeltas, double epsilon) {
+        return betweenScore(prevDeltas, currDeltas, epsilon, NEUTRAL_BETWEEN_SCORE);
+    }
+
+    static double betweenScore(List<Double> prevDeltas, List<Double> currDeltas, double epsilon,
+                               double neutralBetweenScore) {
         double prevTone = tone(prevDeltas, epsilon);
         double currTone = tone(currDeltas, epsilon);
         if (prevTone * currTone < 0.0) {
             return 0.0;
+        }
+        if (prevTone == 0.0 || currTone == 0.0) {
+            return neutralBetweenScore;
         }
         return 1.0;
     }

@@ -192,11 +192,12 @@ D_t = Σ δ_i   по матчам турнира t с |δ_i| > ε
 **Между турнирами** — переходы `k` по хронологии (`starts_at`), пары `(t_{k−1}, t_k)`:
 
 ```
-S^between_k = 0   если D_{t_{k−1}} · D_{t_k} < 0
-S^between_k = 1   иначе
+S^between_k = 0     если D_{t_{k−1}} · D_{t_k} < 0
+S^between_k = 0.8   если D_{t_{k−1}} = 0  или  D_{t_k} = 0
+S^between_k = 1     иначе
 ```
 
-Нейтральный турнир (`D_t = 0`) не создаёт межтурнирной «качки» с соседом.
+Нейтральный турнир (`D_t = 0`) — переход «неопределён»: штраф 20% от смены тона (`S = 0.8`).
 
 **Итог:**
 
@@ -217,15 +218,15 @@ Stability = 100 · ( Σ_t S^within_t · w(Δt_t) + Σ_k S^between_k · w(Δt_{t_
 
 #### 2.8.1 Отображение на карточке (emoji-зоны)
 
-Числовой `Stability` **не показываем** — только emoji по порогам (калибровка на слепке r77, ε=10):
+Числовой `Stability` **не показываем** — только emoji по порогам (калибровка на слепке r77, ε=11.5, S=0.8):
 
 | Зона | Stability | Emoji | Дефолт порога |
 |---|---|---|---|
-| 1 — совсем нестабилен | `[0, 60)` | 🔴 | — |
-| 2 — нестабилен | `[60, 75)` | 🟠 | `zone2-min = 60` |
-| 3 — середина | `[75, 85)` | 🟡 | `zone3-min = 75` |
-| 4 — стабилен | `[85, 90)` | 🟢 | `zone4-min = 85` |
-| 5 — супер стабилен | `[90, 100]` | 🔥 | `zone5-min = 90` |
+| 1 — совсем нестабилен | `[0, 70)` | 🔴 | — |
+| 2 — нестабилен | `[70, 80)` | 🟠 | `zone2-min = 70` |
+| 3 — середина | `[80, 86)` | 🟡 | `zone3-min = 80` |
+| 4 — стабилен | `[86, 92)` | 🟢 | `zone4-min = 86` |
+| 5 — супер стабилен | `[92, 100]` | 🔥 | `zone5-min = 92` |
 
 **Локализация:** `StabilityLevel#fromScore`, `StabilityZoneMetrics`, `Texts.card()`.
 Строка скрыта, если нет матчей с `|δ| > ε`.
@@ -244,11 +245,12 @@ Stability = 100 · ( Σ_t S^within_t · w(Δt_t) + Σ_k S^between_k · w(Δt_{t_
 | `H` | `180` | `half-life-days` | `halfLifeDays` | 2.1, 2.2, 2.3, 2.4, 2.8 | Период полураспада (дни) для `S`, `Form`, `Stability` |
 | `W_max` | `0.8` | `early-decay-max` | `earlyDecayMax` | 2.1, 2.2, 2.8 | Потолок веса свежести в начале первого периода `(0.5, 1]` |
 | `α` | `0.5` | `early-decay-power` | `earlyDecayPower` | 2.1, 2.2, 2.8 | Крутизна спада веса в первом периоде (`> 0`; `1` = прежняя форма кривой) |
-| `ε` | `10.0` | `stability-surprise-threshold` | `stabilitySurpriseThreshold` | 2.8 | Порог \|δ\| для учёта сюрприза матча |
-| `zone2` | `60` | `stability-zones.zone2-min` | `stabilityZones.zone2Min` | 2.8.1 | Нижняя граница зоны 🟠 |
-| `zone3` | `75` | `stability-zones.zone3-min` | `stabilityZones.zone3Min` | 2.8.1 | Нижняя граница зоны 🟡 |
-| `zone4` | `85` | `stability-zones.zone4-min` | `stabilityZones.zone4Min` | 2.8.1 | Нижняя граница зоны 🟢 |
-| `zone5` | `90` | `stability-zones.zone5-min` | `stabilityZones.zone5Min` | 2.8.1 | Нижняя граница зоны 🔥 |
+| `ε` | `11.5` | `stability-surprise-threshold` | `stabilitySurpriseThreshold` | 2.8 | Порог \|δ\| для учёта сюрприза матча |
+| `S_neutral` | `0.8` | — (константа в `StabilityService`) | `NEUTRAL_BETWEEN_SCORE` | 2.8 | `S^between` при нейтральном турнире в паре |
+| `zone2` | `70` | `stability-zones.zone2-min` | `stabilityZones.zone2Min` | 2.8.1 | Нижняя граница зоны 🟠 |
+| `zone3` | `80` | `stability-zones.zone3-min` | `stabilityZones.zone3Min` | 2.8.1 | Нижняя граница зоны 🟡 |
+| `zone4` | `86` | `stability-zones.zone4-min` | `stabilityZones.zone4Min` | 2.8.1 | Нижняя граница зоны 🟢 |
+| `zone5` | `92` | `stability-zones.zone5-min` | `stabilityZones.zone5Min` | 2.8.1 | Нижняя граница зоны 🔥 |
 | `k` | `0.5` | `form-k` | `formK` | 2.3, 2.4 | Вклад формы в эффективный рейтинг |
 | `S_ref` | `1.0` | `s-ref` | `sRef` | 2.3, 2.4 | Опорная сыгранность для веса смешивания `w` |
 | `Bmax` | `20.0` | `b-max` | `bMax` | 2.4 | Максимальный бонус парного рейтинга за сыгранность |
