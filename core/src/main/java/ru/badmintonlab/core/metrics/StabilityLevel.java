@@ -8,8 +8,8 @@ import ru.badmintonlab.core.config.StabilityZoneMetrics;
 public enum StabilityLevel {
 
     VERY_UNSTABLE("\uD83D\uDD34"),
-    UNSTABLE("\uD83D\uDFE0"),
-    MIDDLE("\uD83D\uDFE1"),
+    UNSTABLE("\uD83D\uDFE1"),
+    MIDDLE("\u26AA"),
     STABLE("\uD83D\uDFE2"),
     SUPER_STABLE("\uD83D\uDD25");
 

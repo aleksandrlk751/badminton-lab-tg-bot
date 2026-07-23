@@ -55,8 +55,8 @@ class StabilityCalibrationTest {
                 percentile(rows, 75), percentile(rows, 90), stats.getMax(), stats.getAverage());
 
         printZone("🔴 very unstable", 0, 55, rows);
-        printZone("🟠 unstable", 55, 70, rows);
-        printZone("🟡 middle", 70, 82, rows);
+        printZone("🟡 unstable", 55, 70, rows);
+        printZone("⚪ middle", 70, 82, rows);
         printZone("🟢 stable", 82, 92, rows);
         printZone("💚 super stable", 92, 101, rows);
     }
@@ -187,8 +187,8 @@ class StabilityCalibrationTest {
                 stats.getMin(), percentile(rows, 10), percentile(rows, 25), percentile(rows, 50),
                 percentile(rows, 75), percentile(rows, 90), stats.getMax(), stats.getAverage());
         printZonePct("1 🔴 <70", rows, Double.NEGATIVE_INFINITY, 70);
-        printZonePct("2 🟠 70-80", rows, 70, 80);
-        printZonePct("3 🟡 80-86", rows, 80, 86);
+        printZonePct("2 🟡 70-80", rows, 70, 80);
+        printZonePct("3 ⚪ 80-86", rows, 80, 86);
         printZonePct("4 🟢 86-92", rows, 86, 92);
         printZonePct("5 🔥 92+", rows, 92, Double.POSITIVE_INFINITY);
     }
@@ -244,8 +244,8 @@ class StabilityCalibrationTest {
                 + TestMetrics.defaults().stabilitySurpriseThreshold()
                 + ", " + label + ", n=" + n + ") ===");
         printZonePct("1 🔴 <70", rows, Double.NEGATIVE_INFINITY, 70);
-        printZonePct("2 🟠 70-80", rows, 70, 80);
-        printZonePct("3 🟡 80-86", rows, 80, 86);
+        printZonePct("2 🟡 70-80", rows, 70, 80);
+        printZonePct("3 ⚪ 80-86", rows, 80, 86);
         printZonePct("4 🟢 86-92", rows, 86, 92);
         printZonePct("5 🔥 92+", rows, 92, Double.POSITIVE_INFINITY);
     }

@@ -25,6 +25,16 @@ class StabilityLevelTest {
     }
 
     @Test
+    void middleZoneUsesWhiteCircleEmoji() {
+        assertEquals("\u26AA", StabilityLevel.MIDDLE.emoji());
+    }
+
+    @Test
+    void unstableZoneUsesYellowCircleEmoji() {
+        assertEquals("\uD83D\uDFE1", StabilityLevel.UNSTABLE.emoji());
+    }
+
+    @Test
     void superStableZoneUsesFireEmoji() {
         assertEquals("\uD83D\uDD25", StabilityLevel.SUPER_STABLE.emoji());
     }
