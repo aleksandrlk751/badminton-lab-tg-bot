@@ -2,7 +2,7 @@
 
 > **Цель:** не читать весь репозиторий целиком. Сначала определить тип задачи → открыть только нужные зоны.  
 > **Точка входа:** [`AGENTS.md`](../AGENTS.md) (правила, источник данных, конвенции).  
-> **Актуально:** этапы 0–4 завершены; в работе — этап 5 (H2H для пар).
+> **Актуально:** этапы 0–4 завершены; v1: 5 пол → 6 H2H → 7 партнёры → 8 привязка → 9 лайв → 10 VPS. График — v2.
 
 ---
 
@@ -162,7 +162,7 @@ flowchart TB
 
 **Документация:** [`FORMULAR.md`](FORMULAR.md) — единственный источник формул.
 
-**Типичные задачи:** изменить/откалибровать метрику, подключить метрику в bot (этап 5+), unit-тест на формулу.
+**Типичные задачи:** изменить/откалибровать метрику, подключить метрику в bot (этап 6+), unit-тест на формулу.
 
 **Не трогать без нужды:** `entity/`, `worker/` — метрики **чистые**, без БД.
 
@@ -244,7 +244,7 @@ flowchart TB
 | Класс | Назначение |
 |---|---|
 | `UpdateDispatcher` | Главный роутер: команды, callback, свободный текст |
-| `H2hFlowHandler` | Многошаговый сценарий H2H (этап 5) |
+| `H2hFlowHandler` | Многошаговый сценарий H2H (этап 6) |
 | `ChatSession` / `ChatSessionStore` | Состояние диалога в памяти |
 | `BadmintonLabBot` | Spring + long polling entry |
 
@@ -265,7 +265,7 @@ flowchart TB
 | `PlayerSearchService` / `PlayerSearchOperations` | Поиск pg_trgm |
 | `PlayerCardService` / `PlayerCardLoader` | Карточка игрока |
 | `RivalService` / `RivalLookup` | Список соперников |
-| `H2hService` | H2H: W-L, матчи, метрики (этап 5) |
+| `H2hService` | H2H: W-L, матчи, метрики, тип пары (этап 6) |
 | `H2hLazyFetchService` | Lazy fetch с сайта при нехватке матчей |
 | `SnapshotInfoService` | Дата актуальности данных |
 
@@ -298,10 +298,10 @@ flowchart TB
 | `02-search.md` | Поиск |
 | `03-player-card.md` | Карточка |
 | `04-rivals.md` | Соперники |
-| `05-h2h.md` | H2H (этап 5) |
-| `06-rating-history.md` | График (этап 7) |
+| `05-h2h.md` | H2H (этап 6) |
+| `06-rating-history.md` | График (**v2**) |
 | `07-help.md` | `/help` |
-| `08-partner-pick.md` | Партнёры (этап 8) |
+| `08-partner-pick.md` | Партнёры (этап 7) |
 
 **Типичные задачи:** текст кнопки, emoji, новая клавиатура, правка формата карточки.
 
@@ -318,7 +318,8 @@ flowchart TB
 | **Новый экран бота / UX** | bootstrap → `docs/messages/XX-*.md` → Z7 → Z9 → Z8 (нужный сервис) | bot, возможно core |
 | **Поиск игроков** | Z8 (`PlayerSearch*`) → `PlayerRepository` → `V1__init.sql` (индексы trgm) | bot, core |
 | **Карточка / соперники** | `03-player-card.md`, `04-rivals.md` → Z8 → Z2 (`RivalSummary*`) | bot, core |
-| **H2H (этап 5)** | `05-h2h.md` → Z7 (`H2hFlowHandler`) → Z8 (`H2h*`) → Z3 → `H2hRepository` → Z4 (`TournamentGamesParser`) | bot, core, worker |
+| **H2H (этап 6)** | `05-h2h.md` → Z7 (`H2hFlowHandler`) → Z8 (`H2h*`) → Z3 (`PairCompositionService`) → `H2hRepository` → Z4 | bot, core, worker |
+| **Пол игрока (этап 5)** | `PLAN.md` этап 5 → Z4 (`PlayerDirectoryParser`) → Z6 → Z2 (`Player` + Flyway V2) → Z3 (`PairCompositionService`) | worker, core |
 | **Формула / метрика** | `FORMULAR.md` → Z3 → тесты `core/.../metrics/` | core |
 | **Схема БД / миграция** | `BRIEF.md` §2 → Z2 → `schema.sql` (справка) → новый `V2__*.sql` | core |
 | **Парсер сломался / новое поле** | `spike-parser.md` → Z4 → fixture → тест `worker/.../parser/` | worker |
@@ -328,10 +329,11 @@ flowchart TB
 | **Lazy fetch из бота** | Z8 (`H2hLazyFetchService`) → Z5 (паттерны) → `BotFetchConfig` | bot, worker (реф.) |
 | **Конфиг метрик** | `FORMULAR.md` → `application-core.yml` → `MetricsProperties` | core |
 | **Локальный запуск / CI** | Z1 → `README.md` | root |
-| **Деплой VPS (этап 9)** | Z1 → `PLAN.md` этап 9 → `docker-compose.yml` | root, все модули |
-| **Пол игрока (этап 6)** | `PLAN.md` этап 6 → Z4 (новый parser) → Z6 → Z2 (`Player` + Flyway V2) | worker, core |
-| **График рейтинга (этап 7)** | `06-rating-history.md` → Z8 → Z2 (`PlayerRatingHistory`) | bot, core |
-| **Подбор партнёра (этап 8)** | `08-partner-pick.md` → Z3 → Z2 → Z4 (`TournamentRegistrationParser`) → Z6 | bot, core, worker |
+| **Деплой VPS (этап 10)** | Z1 → `PLAN.md` этап 10 → `docker-compose.yml` | root, все модули |
+| **Подбор партнёра (этап 7)** | `08-partner-pick.md` → Z3 → Z2 → Z4 (`TournamentRegistrationParser`) → Z6 | bot, core, worker |
+| **Привязка TG (этап 8)** | `PLAN.md` этап 8 → Z7 → Z2 (новая сущность link) → Z8 | bot, core |
+| **Лайв MVP (этап 9)** | `PLAN.md` этап 9 → Z7 (FSM) → Z2 (live entities) → Z8 | bot, core |
+| **График рейтинга (v2)** | `06-rating-history.md` → Z8 → Z2 (`PlayerRatingHistory`) | bot, core |
 | **Технический долг** | `PLAN.md` §«Технический долг» → указанная зона | varies |
 
 ---
@@ -345,12 +347,13 @@ flowchart TB
 | 2 Worker слепок | ✓ | Z5, Z6, Z4 | `README.md`, `spike-parser.md` |
 | 3 Метрики | ✓ | Z3 | `FORMULAR.md` |
 | 4 Bot shell | ✓ | Z7, Z8, Z9 | `docs/messages/01–04` |
-| **5 H2H** | **→ текущий** | Z7, Z8, Z3, Z2 (`H2hRepository`) | `05-h2h.md`, `FORMULAR.md` §P3 |
-| 6 Пол игрока | planned | Z4, Z6, Z2 | `PLAN.md` этап 6, `BRIEF.md` §2 |
-| 7 График рейтинга | planned | Z8, Z9, Z2 | `06-rating-history.md` |
-| 8 Партнёры | planned | Z8, Z3, Z4, Z6 | `08-partner-pick.md`, `FORMULAR.md` §3 |
-| 9 VPS | planned | Z1 | `PLAN.md` этап 9 |
-| 10+ Roadmap | — | по направлению | `BRIEF.md` §1, `PLAN.md` этап 10+ |
+| **5 Пол игрока** | **→ текущий** | Z4, Z6, Z2, Z3 (`PairCompositionService`) | `PLAN.md` этап 5, `BRIEF.md` §2 |
+| **6 H2H** | planned | Z7, Z8, Z3, Z2 (`H2hRepository`) | `05-h2h.md`, `FORMULAR.md` §P3 |
+| 7 Партнёры | planned | Z8, Z3, Z4, Z6 | `08-partner-pick.md`, `FORMULAR.md` §3 |
+| 8 Привязка TG | planned | Z7, Z8, Z2 | `PLAN.md` этап 8, `BRIEF.md` §6.1 |
+| 9 Лайв MVP | planned | Z7, Z2, Z8 | `PLAN.md` этап 9, `BRIEF.md` §6.2 |
+| 10 VPS | planned | Z1 | `PLAN.md` этап 10 |
+| v2+ Roadmap | — | по направлению | график рейтинга, `BRIEF.md` §11 |
 
 ---
 
