@@ -16,4 +16,13 @@ public final class PairCompositionLabels {
             case UNKNOWN -> "неизвестно";
         };
     }
+
+    /** Название типа пары для карточки игрока — с заглавной буквы. */
+    public static String cardLabel(PairCompositionType type) {
+        String label = label(type);
+        if (label.isEmpty()) {
+            return label;
+        }
+        return Character.toUpperCase(label.charAt(0)) + label.substring(1);
+    }
 }

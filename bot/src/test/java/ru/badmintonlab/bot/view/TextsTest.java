@@ -89,10 +89,10 @@ class TextsTest {
 
         String text = texts.card(card);
 
-        assertTrue(text.contains("<b>Игровой акцент</b>"), text);
-        assertTrue(text.contains(MessageEmoji.GAME_ACCENT_PREFERENCE + "  микст · 14 игр за полгода"), text);
-        assertTrue(text.contains("<b>Рекомендуемая категория</b>"), text);
-        assertTrue(text.contains(MessageEmoji.RECOMMENDED_CATEGORY + "  женская пара (δ +2.3/матч)"), text);
+        assertTrue(text.contains("<b>Игровой акцент</b> " + MessageEmoji.GAME_ACCENT_PREFERENCE), text);
+        assertTrue(text.contains("Микст\n14 игр за полгода"), text);
+        assertTrue(text.contains("<b>Рекомендуемая категория</b> " + MessageEmoji.RECOMMENDED_CATEGORY), text);
+        assertTrue(text.contains("Женская пара"), text);
     }
 
     @Test
@@ -105,8 +105,8 @@ class TextsTest {
         assertTrue(text.contains("<b>Рейтинги</b>\n" + MessageEmoji.UNKNOWN), text);
         assertTrue(text.contains("Форма  " + MessageEmoji.FORM + "  " + MessageEmoji.UNKNOWN), text);
         assertTrue(text.contains("Стабильность  " + MessageEmoji.UNKNOWN), text);
-        assertTrue(text.contains("<b>Игровой акцент</b>\n" + MessageEmoji.UNKNOWN), text);
-        assertTrue(text.contains("<b>Рекомендуемая категория</b>\n" + MessageEmoji.UNKNOWN), text);
+        assertTrue(text.contains("<b>Игровой акцент</b> " + MessageEmoji.GAME_ACCENT_PREFERENCE + "\n" + MessageEmoji.UNKNOWN), text);
+        assertTrue(text.contains("<b>Рекомендуемая категория</b> " + MessageEmoji.RECOMMENDED_CATEGORY + "\n" + MessageEmoji.UNKNOWN), text);
         assertTrue(text.contains("<b>Последний турнир</b>\n" + MessageEmoji.UNKNOWN), text);
     }
 

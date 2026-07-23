@@ -235,16 +235,16 @@ public class Texts {
                 .append(card.stabilityEmoji() != null ? card.stabilityEmoji() : MessageEmoji.UNKNOWN)
                 .append('\n');
 
-        sb.append("\n\n<b>Игровой акцент</b>\n");
+        sb.append("\n\n<b>Игровой акцент</b> ").append(MessageEmoji.GAME_ACCENT_PREFERENCE).append('\n');
         if (card.gameAccent() != null) {
-            appendGameAccentPreferenceLine(sb, card.gameAccent());
+            appendGameAccentPreferenceLines(sb, card.gameAccent());
         } else {
             sb.append(MessageEmoji.UNKNOWN).append('\n');
         }
 
-        sb.append("\n\n<b>Рекомендуемая категория</b>\n");
+        sb.append("\n\n<b>Рекомендуемая категория</b> ").append(MessageEmoji.RECOMMENDED_CATEGORY).append('\n');
         if (card.gameAccent() != null) {
-            appendRecommendedCategoryLine(sb, card.gameAccent());
+            sb.append(escape(PairCompositionLabels.cardLabel(card.gameAccent().strengthType()))).append('\n');
         } else {
             sb.append(MessageEmoji.UNKNOWN).append('\n');
         }
@@ -258,22 +258,9 @@ public class Texts {
         return sb.toString().trim();
     }
 
-    private void appendGameAccentPreferenceLine(StringBuilder sb, GameAccentResult accent) {
-        sb.append(MessageEmoji.GAME_ACCENT_PREFERENCE).append("  ")
-                .append(escape(PairCompositionLabels.label(accent.preferenceType())))
-                .append(" · ")
-                .append(gamesLabel(accent.preferenceGamesInWindow()))
-                .append(" за полгода")
-                .append('\n');
-    }
-
-    private void appendRecommendedCategoryLine(StringBuilder sb, GameAccentResult accent) {
-        sb.append(MessageEmoji.RECOMMENDED_CATEGORY).append("  ")
-                .append(escape(PairCompositionLabels.label(accent.strengthType())))
-                .append(" (δ ")
-                .append(formatForm(accent.strengthAvgDelta()))
-                .append("/матч)")
-                .append('\n');
+    private void appendGameAccentPreferenceLines(StringBuilder sb, GameAccentResult accent) {
+        sb.append(escape(PairCompositionLabels.cardLabel(accent.preferenceType()))).append('\n');
+        sb.append(gamesLabel(accent.preferenceGamesInWindow())).append(" за полгода").append('\n');
     }
 
     static String gamesLabel(int count) {
