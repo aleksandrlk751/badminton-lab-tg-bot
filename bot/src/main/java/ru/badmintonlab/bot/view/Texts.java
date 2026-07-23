@@ -217,35 +217,41 @@ public class Texts {
             sb.append("\n").append(escape(card.city()));
         }
 
-        if (!card.ratings().isEmpty()) {
-            sb.append("\n\n<b>Рейтинги</b>\n");
+        sb.append("\n\n<b>Рейтинги</b>\n");
+        if (card.ratings().isEmpty()) {
+            sb.append(MessageEmoji.UNKNOWN).append('\n');
+        } else {
             for (RatingLine line : card.ratings()) {
                 sb.append(DisciplineLabels.ratingLabel(line.discipline())).append("  ")
                         .append(formatRating(line.rating())).append('\n');
             }
         }
 
-        if (card.form() != null) {
-            sb.append('\n').append(MessageEmoji.FORM).append("  ")
-                    .append(formatForm(card.form())).append('\n');
-        }
+        sb.append("\nФорма  ").append(MessageEmoji.FORM).append("  ")
+                .append(card.form() != null ? formatForm(card.form()) : MessageEmoji.UNKNOWN)
+                .append('\n');
 
-        if (card.stabilityEmoji() != null) {
-            sb.append(card.stabilityEmoji()).append('\n');
-        }
+        sb.append("Стабильность  ")
+                .append(card.stabilityEmoji() != null ? card.stabilityEmoji() : MessageEmoji.UNKNOWN)
+                .append('\n');
 
+        sb.append("\n\n<b>Игровой акцент</b>\n");
         if (card.gameAccent() != null) {
-            appendGameAccent(sb, card.gameAccent());
+            appendGameAccentLines(sb, card.gameAccent());
+        } else {
+            sb.append(MessageEmoji.UNKNOWN).append('\n');
         }
 
+        sb.append("\n\n<b>Последний турнир</b>\n");
         if (card.lastTournament() != null) {
-            appendLastTournament(sb, card.lastTournament());
+            appendLastTournamentLines(sb, card.lastTournament());
+        } else {
+            sb.append(MessageEmoji.UNKNOWN).append('\n');
         }
         return sb.toString().trim();
     }
 
-    private void appendGameAccent(StringBuilder sb, GameAccentResult accent) {
-        sb.append("\n\n<b>Игровой акцент</b>\n");
+    private void appendGameAccentLines(StringBuilder sb, GameAccentResult accent) {
         sb.append(MessageEmoji.GAME_ACCENT_PREFERENCE).append("  ")
                 .append(escape(PairCompositionLabels.label(accent.preferenceType())))
                 .append(" · ")
@@ -283,8 +289,7 @@ public class Texts {
         return Math.round(share * 100) + "%";
     }
 
-    private void appendLastTournament(StringBuilder sb, LastTournamentInfo t) {
-        sb.append("\n\n<b>Последний турнир</b>\n");
+    private void appendLastTournamentLines(StringBuilder sb, LastTournamentInfo t) {
         sb.append(escape(t.name()));
         if (t.date() != null || t.resultLabel() != null) {
             sb.append("\n");

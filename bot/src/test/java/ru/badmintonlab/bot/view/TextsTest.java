@@ -58,21 +58,21 @@ class TextsTest {
         assertTrue(text.contains(MessageEmoji.SINGLE + "  320"), text);
         assertFalse(text.contains("<code>"), text);
         assertTrue(text.contains(MessageEmoji.DOUBLE + "  535"), text);
-        assertTrue(text.contains(MessageEmoji.FORM + "  +1.2"), text);
+        assertTrue(text.contains("Форма  " + MessageEmoji.FORM + "  +1.2"), text);
         assertTrue(text.contains("2-е место"), text);
         assertFalse(text.contains("Данные на"), text);
     }
 
     @Test
-    void cardRendersStabilityEmojiWithoutLabel() {
+    void cardRendersStabilityWithLabelAndZoneEmoji() {
         PlayerCard card = new PlayerCard(
                 1L, "Rocket", "Иванов Иван", "Москва", List.of(), 1.2,
                 StabilityLevel.STABLE.emoji(), null, null, null);
 
         String text = texts.card(card);
 
-        assertTrue(text.contains(MessageEmoji.FORM + "  +1.2"), text);
-        assertTrue(text.contains(StabilityLevel.STABLE.emoji()), text);
+        assertTrue(text.contains("Форма  " + MessageEmoji.FORM + "  +1.2"), text);
+        assertTrue(text.contains("Стабильность  " + StabilityLevel.STABLE.emoji()), text);
     }
 
     @Test
@@ -93,6 +93,20 @@ class TextsTest {
         assertTrue(text.contains(MessageEmoji.GAME_ACCENT_PREFERENCE + "  микст · 58% · 14 игр за полгода"), text);
         assertTrue(text.contains(MessageEmoji.GAME_ACCENT_STRENGTH + "  женская пара · +2.3 · "
                 + MessageEmoji.WIN + " 78%"), text);
+    }
+
+    @Test
+    void cardShowsUnknownPlaceholderForMissingMetrics() {
+        PlayerCard card = new PlayerCard(
+                1L, "Rocket", "Иванов Иван", "Москва", List.of(), null, null, null, null, null);
+
+        String text = texts.card(card);
+
+        assertTrue(text.contains("<b>Рейтинги</b>\n" + MessageEmoji.UNKNOWN), text);
+        assertTrue(text.contains("Форма  " + MessageEmoji.FORM + "  " + MessageEmoji.UNKNOWN), text);
+        assertTrue(text.contains("Стабильность  " + MessageEmoji.UNKNOWN), text);
+        assertTrue(text.contains("<b>Игровой акцент</b>\n" + MessageEmoji.UNKNOWN), text);
+        assertTrue(text.contains("<b>Последний турнир</b>\n" + MessageEmoji.UNKNOWN), text);
     }
 
     @Test

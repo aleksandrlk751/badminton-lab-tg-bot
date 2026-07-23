@@ -83,9 +83,21 @@ function Test-Running([string] $Name) {
     return $null -ne (Get-Process -Id $processId -ErrorAction SilentlyContinue)
 }
 
+function Stop-OrphanBotApplications {
+    $orphans = Get-CimInstance Win32_Process -Filter "Name='java.exe'" -ErrorAction SilentlyContinue |
+        Where-Object { $_.CommandLine -like '*ru.badmintonlab.bot.BotApplication*' }
+    foreach ($proc in $orphans) {
+        taskkill /PID $proc.ProcessId /T /F | Out-Null
+        Write-Host "Остановлен BotApplication (PID $($proc.ProcessId))."
+    }
+}
+
 function Stop-Component([string] $Name) {
     $pidFile = Get-PidFile $Name
     if (-not (Test-Path $pidFile)) {
+        if ($Name -eq 'bot') {
+            Stop-OrphanBotApplications
+        }
         Write-Host "$Name не запущен."
         return
     }
@@ -97,9 +109,15 @@ function Stop-Component([string] $Name) {
         Write-Host "$Name уже не работает."
     }
     Remove-Item $pidFile -Force -ErrorAction SilentlyContinue
+    if ($Name -eq 'bot') {
+        Stop-OrphanBotApplications
+    }
 }
 
 function Start-Component([string] $Name, [string] $Module) {
+    if ($Name -eq 'bot') {
+        Stop-OrphanBotApplications
+    }
     if (Test-Running $Name) {
         Write-Host "$Name уже запущен."
         return
