@@ -23,6 +23,8 @@ public final class MessageEmoji {
     public static final String GAME_ACCENT_PREFERENCE = "\uD83D\uDCCA";
     /** Средняя δ и рост (ось сильной стороны игрового акцента). */
     public static final String GAME_ACCENT_STRENGTH = "\uD83D\uDCC8";
+    /** Типичная δ за матч в рекомендуемой категории (ось 2). */
+    public static final String RECOMMENDED_CATEGORY = "\uD83E\uDDEE";
     /** Нет данных / недостаточно информации для показателя. */
     public static final String UNKNOWN = "\uD83E\uDD37\u200D\u2642\uFE0F";
 

@@ -90,9 +90,9 @@ class TextsTest {
         String text = texts.card(card);
 
         assertTrue(text.contains("<b>Игровой акцент</b>"), text);
-        assertTrue(text.contains(MessageEmoji.GAME_ACCENT_PREFERENCE + "  микст · 58% · 14 игр за полгода"), text);
-        assertTrue(text.contains(MessageEmoji.GAME_ACCENT_STRENGTH + "  женская пара · +2.3 · "
-                + MessageEmoji.WIN + " 78%"), text);
+        assertTrue(text.contains(MessageEmoji.GAME_ACCENT_PREFERENCE + "  микст · 14 игр за полгода"), text);
+        assertTrue(text.contains("<b>Рекомендуемая категория</b>"), text);
+        assertTrue(text.contains(MessageEmoji.RECOMMENDED_CATEGORY + "  женская пара (δ +2.3/матч)"), text);
     }
 
     @Test
@@ -106,6 +106,7 @@ class TextsTest {
         assertTrue(text.contains("Форма  " + MessageEmoji.FORM + "  " + MessageEmoji.UNKNOWN), text);
         assertTrue(text.contains("Стабильность  " + MessageEmoji.UNKNOWN), text);
         assertTrue(text.contains("<b>Игровой акцент</b>\n" + MessageEmoji.UNKNOWN), text);
+        assertTrue(text.contains("<b>Рекомендуемая категория</b>\n" + MessageEmoji.UNKNOWN), text);
         assertTrue(text.contains("<b>Последний турнир</b>\n" + MessageEmoji.UNKNOWN), text);
     }
 

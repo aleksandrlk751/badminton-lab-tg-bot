@@ -237,7 +237,14 @@ public class Texts {
 
         sb.append("\n\n<b>Игровой акцент</b>\n");
         if (card.gameAccent() != null) {
-            appendGameAccentLines(sb, card.gameAccent());
+            appendGameAccentPreferenceLine(sb, card.gameAccent());
+        } else {
+            sb.append(MessageEmoji.UNKNOWN).append('\n');
+        }
+
+        sb.append("\n\n<b>Рекомендуемая категория</b>\n");
+        if (card.gameAccent() != null) {
+            appendRecommendedCategoryLine(sb, card.gameAccent());
         } else {
             sb.append(MessageEmoji.UNKNOWN).append('\n');
         }
@@ -251,22 +258,21 @@ public class Texts {
         return sb.toString().trim();
     }
 
-    private void appendGameAccentLines(StringBuilder sb, GameAccentResult accent) {
+    private void appendGameAccentPreferenceLine(StringBuilder sb, GameAccentResult accent) {
         sb.append(MessageEmoji.GAME_ACCENT_PREFERENCE).append("  ")
                 .append(escape(PairCompositionLabels.label(accent.preferenceType())))
-                .append(" · ")
-                .append(formatPercent(accent.preferenceShare()))
                 .append(" · ")
                 .append(gamesLabel(accent.preferenceGamesInWindow()))
                 .append(" за полгода")
                 .append('\n');
-        sb.append(MessageEmoji.GAME_ACCENT_STRENGTH).append("  ")
+    }
+
+    private void appendRecommendedCategoryLine(StringBuilder sb, GameAccentResult accent) {
+        sb.append(MessageEmoji.RECOMMENDED_CATEGORY).append("  ")
                 .append(escape(PairCompositionLabels.label(accent.strengthType())))
-                .append(" · ")
+                .append(" (δ ")
                 .append(formatForm(accent.strengthAvgDelta()))
-                .append(" · ")
-                .append(MessageEmoji.WIN).append(' ')
-                .append(formatPercent(accent.strengthWinRate()))
+                .append("/матч)")
                 .append('\n');
     }
 
@@ -283,10 +289,6 @@ public class Texts {
             return count + " игры";
         }
         return count + " игр";
-    }
-
-    private static String formatPercent(double share) {
-        return Math.round(share * 100) + "%";
     }
 
     private void appendLastTournamentLines(StringBuilder sb, LastTournamentInfo t) {
