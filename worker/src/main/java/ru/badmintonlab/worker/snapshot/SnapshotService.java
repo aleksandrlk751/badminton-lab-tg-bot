@@ -53,6 +53,7 @@ public class SnapshotService {
     private final ResultUpsertService resultUpsertService;
     private final MatchUpsertService matchUpsertService;
     private final RivalSummaryRebuildService rivalSummaryRebuildService;
+    private final PlayerSexSyncService playerSexSyncService;
     private final SnapshotMetaRepository snapshotMetaRepository;
 
     private final TournamentListParser listParser = new TournamentListParser();
@@ -70,6 +71,7 @@ public class SnapshotService {
                            ResultUpsertService resultUpsertService,
                            MatchUpsertService matchUpsertService,
                            RivalSummaryRebuildService rivalSummaryRebuildService,
+                           PlayerSexSyncService playerSexSyncService,
                            SnapshotMetaRepository snapshotMetaRepository) {
         this.client = client;
         this.snapshotProperties = snapshotProperties;
@@ -79,6 +81,7 @@ public class SnapshotService {
         this.resultUpsertService = resultUpsertService;
         this.matchUpsertService = matchUpsertService;
         this.rivalSummaryRebuildService = rivalSummaryRebuildService;
+        this.playerSexSyncService = playerSexSyncService;
         this.snapshotMetaRepository = snapshotMetaRepository;
     }
 
@@ -109,6 +112,8 @@ public class SnapshotService {
             List<ParsedTournament> parsed = parseTournaments(tasks.values(), pool, metrics);
             upsertPlayers(parsed, pool, metrics);
             persistResultsAndMatches(parsed, pool, metrics);
+
+            metrics.setPlayerSexSync(playerSexSyncService.syncRegion(region));
 
             metrics.setRivalRows(rivalSummaryRebuildService.rebuild());
             updateSnapshotMeta(region, from, to);
@@ -150,6 +155,7 @@ public class SnapshotService {
             }
             upsertPlayers(parsed, pool, metrics);
             persistResultsAndMatches(parsed, pool, metrics);
+            metrics.setPlayerSexSync(playerSexSyncService.syncRegion(region));
             metrics.setRivalRows(rivalSummaryRebuildService.rebuild());
             touchSnapshotMeta(region);
             log.info("Точечный импорт завершён: {}", metrics);

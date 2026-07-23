@@ -51,6 +51,12 @@ public class Badminton4uClient {
         return fetcher.get(baseUrl + "players/" + playerId);
     }
 
+    /** Первая страница справочника игроков по полу и региону. */
+    public Document playerDirectoryPage(String regionCode, boolean male) {
+        String sexParam = male ? "sex_m=1" : "sex_f=1";
+        return fetcher.get(baseUrl + "players/?" + sexParam + "&cities[]=" + regionCode);
+    }
+
     /** История игр двух игроков (SSR-таблица, если есть; иначе пустая). */
     public Document playerGames(long user1Id, long user2Id) {
         return fetcher.get(baseUrl + "games/?user1ID=" + user1Id + "&user2ID=" + user2Id);

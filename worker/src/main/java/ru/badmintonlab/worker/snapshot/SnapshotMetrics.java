@@ -15,6 +15,11 @@ public class SnapshotMetrics {
     private final AtomicInteger matchesInserted = new AtomicInteger();
     private final AtomicInteger rivalRows = new AtomicInteger();
     private final AtomicInteger errors = new AtomicInteger();
+    private volatile PlayerSexSyncService.PlayerSexSyncMetrics playerSexSync;
+
+    public void setPlayerSexSync(PlayerSexSyncService.PlayerSexSyncMetrics metrics) {
+        this.playerSexSync = metrics;
+    }
 
     public void addDiscovered(int count) {
         tournamentsDiscovered.addAndGet(count);
@@ -56,6 +61,7 @@ public class SnapshotMetrics {
                 + ", игроков=" + playersProcessed.get()
                 + ", матчей вставлено=" + matchesInserted.get()
                 + ", rival_summary строк=" + rivalRows.get()
+                + (playerSexSync != null ? ", пол: " + playerSexSync : "")
                 + ", ошибок=" + errors.get()
                 + ", длительность=" + d.toMinutes() + "m" + (d.toSecondsPart()) + "s";
     }

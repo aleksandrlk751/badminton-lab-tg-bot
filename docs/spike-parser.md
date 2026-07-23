@@ -20,6 +20,9 @@
 | `tournament-completed-12125.html` | `/tournaments/12125` | ID без `addComment` (alternate link) |
 | `tournament-completed-12126.html` | `/tournaments/12126` | место `-` в итоговой таблице |
 | `games-tournament-12125.html` | `/gamesd/?tourID=12125` | re-import эталон (25 матчей) |
+| `players-directory-sex-m-r77.html` | `players/?sex_m=1&cities[]=r77` | справочник мужчин (первая страница) |
+| `players-directory-sex-f-r77.html` | `players/?sex_f=1&cities[]=r77` | справочник женщин (первая страница) |
+| `players-directory-ajax-page2.html` | AJAX `POST /?ajax` | фрагмент `<tr>` для пагинации списка |
 
 ## Сборка и тесты
 
@@ -44,6 +47,8 @@
 | `TournamentResultsParser` | итоговая таблица пар |
 | `TournamentRegistrationParser` | пары в `#tour-reg-list1` |
 | `PlayerProfileParser` | ник, ФИО, город, рейтинг D, история |
+| `PlayerDirectoryParser` | ID (+ nick) из справочника `players/?sex_m/f=1` и AJAX-фрагментов |
+| `PlayerProfileSexEvidenceParser` | коды категорий турниров и разряды из профиля (fallback пола) |
 | `TournamentGamesParser` | матчи 2v2 с `gamesd/?tourID=` |
 | `RivalSummaryAggregator` | player↔opponent W/L из списка `PairMatch` (вариант C) |
 
@@ -85,6 +90,7 @@ badminton4u:game:{tournamentId}:{playedAt}:{sortedA}:vs{sortedB}:{scoreSets}:{st
 | Rivals `/rivals` | **Не используем** |
 | Соперники (агрегат из `gamesd`) | **GO** — `RivalSummaryAggregator` |
 | Pair-vs-pair матчи | **GO** через `gamesd/?tourID=` |
+| Справочник пола `players/?sex_m/f` | **GO** — SSR + AJAX-пагинация (`PlayerDirectoryLoader`) |
 | H2H `games/?user1&user2` | **Условно** — нужен AJAX или агрегация из `gamesd` |
 
 **Этап 0 закрыт.** Следующий шаг — этап 2 (worker: слепок r77). Локальные команды: [`README.md`](README.md).
@@ -158,5 +164,18 @@ badminton4u:game:{tournamentId}:{playedAt}:{sortedA}:vs{sortedB}:{scoreSets}:{st
 | **Сторона A** | `18153` (480) + `16426` (525); дельта **−5.7** |
 | **Сторона B** | `19080` (577) + `18870` (514); дельта **+5.7** |
 | **Парсер** | всего матчей в таблице: **23** |
+
+### 7. Справочник пола — `PlayerDirectoryParser`
+
+| | |
+|---|---|
+| **Fixtures** | `players-directory-sex-m-r77.html`, `players-directory-sex-f-r77.html`, `players-directory-ajax-page2.html` |
+| **URL singles** | [players/?sex_m=1&cities[]=r77](https://badminton4u.ru/players/?sex_m=1&cities[]=r77) |
+| **URL doubles** | [players/?type=d&sex_m=1&cities[]=r77](https://badminton4u.ru/players/?type=d&sex_m=1&cities[]=r77) — парные игроки, часто только с рейтингом D |
+| **Парсер (первая страница)** | `data-rand` для AJAX; ID из колонки «логин» или «фамилия имя»; nick — если есть ссылка в колонке логина |
+| **Пагинация** | `POST /?ajax`, тело `players={data-rand}&limit=N` (N = число строк − 1), **в той же cookie-сессии**, что GET списка; JSON `{ err, html, showAll }` |
+| **Worker** | `PlayerDirectoryLoader.loadAll(region, sex, listType)` — singles + doubles; `PlayerSexSyncService` после профилей в слепке |
+| **Fallback пола (локально)** | `PlayerSexInference`: MS/MD/WS/WD из `player_rating` и `pair.discipline` участий слепка r77; код категории турнира (WDB/MDA/…); D/XD/X* — не используются |
+| **Fallback пола (профиль)** | `PlayerProfileSexEvidenceParser` — участия и разряды из SSR `/players/{id}` (**все регионы**); `PlayerSexProfileFallbackService` после локального fallback |
 
 Если расхождение — укажите URL, поле и значение на сайте; поправим парсер или fixture.

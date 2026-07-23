@@ -29,6 +29,7 @@ badminton-lab:
     years-back: ${SNAPSHOT_YEARS_BACK:3}
     disciplines: ${SNAPSHOT_DISCIPLINES:D,MD,WD,XD}
     run-on-startup: ${SNAPSHOT_RUN_ON_STARTUP:false}
+    sync-sex-on-startup: ${SNAPSHOT_SYNC_SEX_ON_STARTUP:false}
     max-tournaments: ${SNAPSHOT_MAX_TOURNAMENTS:0}
     scheduled-enabled: ${SNAPSHOT_SCHEDULED_ENABLED:false}
     cron: ${SNAPSHOT_CRON:0 0 4 * * *}

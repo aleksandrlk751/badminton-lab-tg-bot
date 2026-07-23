@@ -4,6 +4,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import ru.badmintonlab.core.domain.Discipline;
 import ru.badmintonlab.core.entity.Participation;
 import ru.badmintonlab.core.repository.projection.LastTournamentView;
 
@@ -35,4 +36,22 @@ public interface ParticipationRepository extends JpaRepository<Participation, Lo
             ORDER BY pa1.tournamentId DESC
             """)
     List<Long> findCommonTournamentIds(@Param("playerA") long playerA, @Param("playerB") long playerB);
+
+    /** Дисциплины пар из участий игрока (MD/WD и т.д.) — для fallback пола. */
+    @Query("""
+            SELECT DISTINCT pr.discipline
+            FROM Participation pa
+            JOIN Pair pr ON pr.id = pa.pairId
+            WHERE pa.playerId = :playerId
+            """)
+    List<Discipline> findPairDisciplinesByPlayerId(@Param("playerId") long playerId);
+
+    /** Коды категорий турниров, где игрок участвовал — fallback, если в паре generic D. */
+    @Query("""
+            SELECT DISTINCT t.categoryCode
+            FROM Participation pa
+            JOIN Tournament t ON t.id = pa.tournamentId
+            WHERE pa.playerId = :playerId AND t.categoryCode IS NOT NULL
+            """)
+    List<String> findTournamentCategoryCodesByPlayerId(@Param("playerId") long playerId);
 }

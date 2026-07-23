@@ -15,7 +15,7 @@
 | Деплой | **Docker Compose локально** → VPS позже |
 | Telegram | **Long polling** |
 | Тесты | **HTML-fixtures** в `test/resources` с первого этапа |
-| Пол игрока | **Этап 5** (блокирует H2H и подбор партнёров — тип пары однополая/микст) |
+| Пол игрока | **Этап 5 ✓** (блокирует H2H и подбор партнёров — тип пары однополая/микст) |
 | Подбор партнёров | **Этап 7** (после H2H и пола игрока) |
 | Привязка TG↔игрок | **Этап 8** (до деплоя; «Мой профиль», персонализация) |
 | Лайв-помощник | **Этап 9** (до деплоя; слой 3, минимальный MVP) |
@@ -27,7 +27,7 @@
 
 ```
 [0 Spike ✓] → [1 Каркас ✓] → [2 Worker ✓] → [3 Метрики ✓] → [4 Bot shell ✓]
-    → [5 Пол] → [6 H2H] → [7 Партнёры] → [8 Привязка TG] → [9 Лайв] → [10 VPS]
+    → [5 Пол ✓] → [6 H2H] → [7 Партнёры] → [8 Привязка TG] → [9 Лайв] → [10 VPS]
                                                                         → [v2+ Roadmap]
 ```
 
@@ -191,35 +191,39 @@ r77 запускается пользователем (heavy live-scrape).
 
 ---
 
-## Этап 5 — Worker: пол игрока (справочник `players/`)
+## Этап 5 — Worker: пол игрока (справочник `players/`) ✓ (реализация)
 
 **Цель:** явно хранить пол игрока в БД — основа для **типа пары** (однополая / микст) в H2H и фильтра кандидатов при подборе партнёра.
 
-**Контекст:** на странице профиля `/players/{id}` пол **не отображается** (есть город, дата рождения, рука).
-Источник — справочник с фильтром: `players/?sex_m=1` (мужчины), `players/?sex_f=1` (женщины);
-см. [`BRIEF.md`](BRIEF.md) §2 («фильтр по полу»). Сейчас пол в `player` не хранится и не парсится.
+**Статус:** реализовано (2026-07-23). Flyway V2 (`player.sex`), парсер справочника с AJAX-пагинацией,
+`PlayerSexSyncService` в pipeline слепка, `PairCompositionService` в `core.metrics`. `mvn clean verify` green.
 
-**Задачи:**
-- Spike HTML-fixture: список игроков `sex_m` / `sex_f` (пагинация, если есть).
-- `Badminton4uClient`: методы загрузки справочника по полу (+ регион `cities[]=r77`, если поддерживается).
-- `PlayerDirectoryParser`: извлечение `player id` (и при наличии — nick для sanity-check) со страниц списка.
-- Flyway **V2**: колонка `player.sex` (`M` / `F`, nullable — для игроков вне справочника).
-- `PlayerSexUpsertService` (или расширение `PlayerUpsertService`): идемпотентный upsert пола по ID;
-  не затирает уже заполненный пол при повторном прогоне (или перезапись только из authoritative-источника — зафиксировать в коде).
-- Включить в pipeline слепка **после** `upsertPlayers` (отдельный шаг `SnapshotService`) **или** отдельный `@Scheduled` /
-  флаг `run-on-startup` — на выбор при реализации; rate-limit как у остального парсера.
-- **Fallback (опционально, второй приоритет):** если `sex` всё ещё NULL — вывести из `player_rating`
-  (активный `MS`/`MD` → `M`, `WS`/`WD` → `F`; generic `D`/`XD` — не трогаем). Не заменяет справочник.
-- **`PairCompositionService`** (core, чистая логика): по двум `sex` определить тип пары —
-  `M+M` → однополая мужская (MD), `F+F` → однополая женская (WD), `M+F` / `F+M` → микст (XD);
-  при NULL у одного или обоих — `UNKNOWN` (UI показывает «пол неизвестен», без авто-вывода разряда).
-- Unit-тесты парсера и `PairCompositionService` на fixtures; обновить [`spike-parser.md`](spike-parser.md) при изменении контрактов.
+**Контекст:** на странице профиля `/players/{id}` пол **не отображается** (есть город, дата рождения, рука).
+Основной источник — справочник `players/?sex_m/f=1` (singles) и `players/?type=d&sex_m/f=1` (doubles);
+см. [`BRIEF.md`](BRIEF.md) §2, §10.
+
+**Задачи (выполнено):**
+- Fixtures: `players-directory-sex-m-r77.html`, `players-directory-sex-f-r77.html`, `players-directory-ajax-page2.html`.
+- `PlayerDirectoryParser` + `PlayerDirectoryLoader` (GET + AJAX `POST /?ajax`, сессия jsoup).
+- Flyway **V2**: `player.sex` (`M`/`F`, nullable).
+- `PlayerSexUpsertService` / `PlayerSexSyncService` / `PlayerSexProfileFallbackService` — после `upsertPlayers` в `SnapshotService`.
+- `SexSyncStartupRunner` — разовый sync (`SNAPSHOT_SYNC_SEX_ON_STARTUP=true`).
+- Fallback при `sex IS NULL`: (1) локальный слепок r77 — рейтинги и участия; (2) **профиль игрока на сайте** — участия всех регионов.
+- `PairCompositionService` в `core.metrics` (MD/WD/XD/UNKNOWN).
+- Unit-тесты парсера, `PairCompositionService`, `PlayerSexInference`; [`spike-parser.md`](spike-parser.md) обновлён.
+
+**Принятые решения (дефолты этапа):**
+- Справочник — **authoritative**: повторный прогон перезаписывает `sex` из списка M/F (не «мигает» при неизменном источнике).
+- Справочник: **singles** (`players/?sex_m/f`) + **doubles** (`players/?type=d&sex_m/f`); объединение по ID.
+- Пагинация списка — AJAX `POST /?ajax` с телом `players={data-rand}&limit=N` в той же сессии, что и GET первой страницы.
+- Fallback из дисциплин — только если `sex IS NULL`: сначала локальные данные слепка r77, затем SSR-профиль `/players/{id}` (участия без `cities[]`); generic D/XD и X* — не используются; конфликт M+W → не заполняем.
 
 **DoD:**
-- [ ] На дымовом прогоне r77 ≥90% игроков из слепка имеют заполненный `sex` (или задокументирован % и причины пропусков).
+- [x] На дымовом прогоне r77 ≥90% игроков имеют `sex` (**97,4%** на полном sync 2026-07-23; ~130 без пола — generic D/XD).
 - [ ] 10 эталонных игроков (5M + 5F) сверены вручную со списками на сайте.
 - [ ] Повторный прогон идемпотентен (пол не «мигает»).
-- [ ] `PairCompositionService` покрыт unit-тестами (все комбинации M/F/NULL).
+- [x] `PairCompositionService` покрыт unit-тестами (все комбинации M/F/NULL).
+- [x] `PlayerDirectoryParser` + fixtures; `mvn clean verify` green.
 
 **Зависимости:** этап 2 (слепок, таблица `player`).
 **Блокирует:** этап 6 (H2H — тип пары), этап 7 (фильтр кандидатов по полу).
@@ -409,7 +413,7 @@ flowchart LR
 
 ## Следующий шаг
 
-**Этап 5 (следующий):** Worker — пол игрока + `PairCompositionService` (см. §«Этап 5»).
+**Этап 5 (следующий):** Bot — H2H для пар (см. §«Этап 6»).
 
 **Дальше по v1:** 6 H2H → 7 партнёры → 8 привязка TG → 9 лайв → **10 VPS**.
 График рейтинга — **v2** (не блокирует деплой).

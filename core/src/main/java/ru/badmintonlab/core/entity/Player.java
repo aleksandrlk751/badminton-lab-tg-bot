@@ -2,10 +2,15 @@ package ru.badmintonlab.core.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+import ru.badmintonlab.core.domain.PlayerSex;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -37,6 +42,11 @@ public class Player {
 
     @Column(name = "playing_hand", length = 16)
     private String playingHand;
+
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(columnDefinition = "player_sex")
+    private PlayerSex sex;
 
     @Column(name = "hall_id")
     private Long hallId;
@@ -132,6 +142,14 @@ public class Player {
 
     public void setPlayingHand(String playingHand) {
         this.playingHand = playingHand;
+    }
+
+    public PlayerSex getSex() {
+        return sex;
+    }
+
+    public void setSex(PlayerSex sex) {
+        this.sex = sex;
     }
 
     public Long getHallId() {

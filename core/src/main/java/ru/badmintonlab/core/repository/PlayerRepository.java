@@ -9,6 +9,8 @@ import java.util.List;
 
 public interface PlayerRepository extends JpaRepository<Player, Long> {
 
+    List<Player> findBySexIsNull();
+
     /**
      * Нечёткий поиск игрока по нику или ФИО (от 3 символов).
      * Подстрочный ILIKE по нику/фамилии/имени/«Фамилия Имя» (использует gin_trgm_ops индексы),

@@ -2,7 +2,7 @@
 
 > **Цель:** не читать весь репозиторий целиком. Сначала определить тип задачи → открыть только нужные зоны.  
 > **Точка входа:** [`AGENTS.md`](../AGENTS.md) (правила, источник данных, конвенции).  
-> **Актуально:** этапы 0–4 завершены; v1: 5 пол → 6 H2H → 7 партнёры → 8 привязка → 9 лайв → 10 VPS. График — v2.
+> **Актуально:** этапы 0–5 завершены; v1: 6 H2H → 7 партнёры → 8 привязка → 9 лайв → 10 VPS. График — v2.
 
 ---
 
@@ -134,9 +134,9 @@ flowchart TB
 | Сущности | `entity/` | `Player`, `Tournament`, `Pair`, `Match`, `MatchPlayer`, `Participation`, `RivalSummary`, `PlayerRating*`, `SnapshotMeta` |
 | Репозитории | `repository/` | Spring Data JPA + нативный pg_trgm-поиск в `PlayerRepository` |
 | Проекции | `repository/projection/` | DTO для bot-запросов: `RivalView`, `H2hMatchView`, `RatingDeltaView`, … |
-| Доменные enum | `domain/` | `Discipline`, `TournamentStatus`, `MatchSide` |
+| Доменные enum | `domain/` | `Discipline`, `TournamentStatus`, `MatchSide`, `PlayerSex`, `PairCompositionType` |
 | Конфиг JPA | `config/CoreJpaConfig.java` | `@EntityScan`, `@EnableJpaRepositories`, scan метрик |
-| Миграции | `core/src/main/resources/db/migration/` | `V1__init.sql` — каноническая схема |
+| Миграции | `core/src/main/resources/db/migration/` | `V1__init.sql`, `V2__player_sex.sql` |
 | Общий конфиг | `core/src/main/resources/application-core.yml` | `badminton-lab.metrics.*` |
 
 **Типичные задачи:** новая колонка/таблица (Flyway V2+), новый запрос к БД, проекция для bot, исправление маппинга entity.
@@ -156,6 +156,7 @@ flowchart TB
 | `PlayabilityIndexService` | Индекс сыгранности S |
 | `FormService` | Форма по дельтам |
 | `PairRatingService` | Официальный `(A+B)/2`, прогнозный рейтинг пары |
+| `PairCompositionService` | Тип пары MD/WD/XD/UNKNOWN по полу двух игроков |
 | `ForecastService` | Прогноз P3 (логистика + blend H2H) |
 | `MetricMath` | Полураспад, сигмоида |
 | `MetricsProperties` | Дефолты из YAML |
@@ -179,6 +180,8 @@ flowchart TB
 | `TournamentRegistrationParser` | регистрация пар (SSR / AJAX) |
 | `TournamentGamesParser` | `gamesd/?tourID=` — pair-vs-pair |
 | `PlayerProfileParser` | `/players/{id}` |
+| `PlayerDirectoryParser` | справочник `players/?sex_m/f` (+ AJAX) |
+| `PlayerProfileSexEvidenceParser` | участия/разряды из профиля (fallback пола) |
 | `RivalSummaryAggregator` | агрегат W/L из списка матчей (in-memory) |
 | `support/ParseUtils`, `support/HtmlFixtures` | утилиты и загрузка fixtures |
 
@@ -203,6 +206,7 @@ flowchart TB
 | `HttpFetcher` | jsoup GET/POST, retry, User-Agent |
 | `RateLimiter` | ≤ maxRps на хост |
 | `Badminton4uClient` | URL-фабрика и вызовы страниц |
+| `PlayerDirectoryLoader` | справочник пола: SSR + AJAX-пагинация (singles/doubles) |
 
 **Конфиг:** `worker/config/ParserProperties.java`, `worker/src/main/resources/application.yml`
 
@@ -224,6 +228,9 @@ flowchart TB
 | `PairService` / `PairInserter` | Пары (идемпотентно) |
 | `MatchUpsertService` | Матчи из gamesd |
 | `PlayerUpsertService` | Профили и рейтинги |
+| `PlayerSexSyncService` | Синхронизация пола после слепка |
+| `PlayerSexProfileFallbackService` | Fallback пола из SSR-профиля (все регионы) |
+| `SexSyncStartupRunner` | Dev-trigger: только sync пола |
 | `RivalSummaryRebuildService` | Полная пересборка `rival_summary` из БД |
 | `SnapshotSupport` | Маппинг parser DTO → entity |
 | `SnapshotScheduler` / `SnapshotStartupRunner` | Cron и dev-trigger |
@@ -319,9 +326,9 @@ flowchart TB
 | **Поиск игроков** | Z8 (`PlayerSearch*`) → `PlayerRepository` → `V1__init.sql` (индексы trgm) | bot, core |
 | **Карточка / соперники** | `03-player-card.md`, `04-rivals.md` → Z8 → Z2 (`RivalSummary*`) | bot, core |
 | **H2H (этап 6)** | `05-h2h.md` → Z7 (`H2hFlowHandler`) → Z8 (`H2h*`) → Z3 (`PairCompositionService`) → `H2hRepository` → Z4 | bot, core, worker |
-| **Пол игрока (этап 5)** | `PLAN.md` этап 5 → Z4 (`PlayerDirectoryParser`) → Z6 → Z2 (`Player` + Flyway V2) → Z3 (`PairCompositionService`) | worker, core |
+| **Пол игрока (этап 5)** | `PLAN.md` этап 5 → Z4 (`PlayerDirectoryParser`, `PlayerProfileSexEvidenceParser`) → Z5 (`PlayerDirectoryLoader`) → Z6 → Z2 (`Player` + V2) → Z3 | worker, core |
 | **Формула / метрика** | `FORMULAR.md` → Z3 → тесты `core/.../metrics/` | core |
-| **Схема БД / миграция** | `BRIEF.md` §2 → Z2 → `schema.sql` (справка) → новый `V2__*.sql` | core |
+| **Схема БД / миграция** | `BRIEF.md` §2 → Z2 → `schema.sql` (справка) → `V1__init.sql`, `V2__player_sex.sql` | core |
 | **Парсер сломался / новое поле** | `spike-parser.md` → Z4 → fixture → тест `worker/.../parser/` | worker |
 | **Новая страница сайта** | `spike-parser.md` → Z5 → Z4 (новый parser) → Z6 (включить в pipeline) | worker |
 | **Слепок / upsert / rival_summary** | `README.md` §слепок → Z6 → Z2 (entity) → Z4 | worker, core |
@@ -347,8 +354,8 @@ flowchart TB
 | 2 Worker слепок | ✓ | Z5, Z6, Z4 | `README.md`, `spike-parser.md` |
 | 3 Метрики | ✓ | Z3 | `FORMULAR.md` |
 | 4 Bot shell | ✓ | Z7, Z8, Z9 | `docs/messages/01–04` |
-| **5 Пол игрока** | **→ текущий** | Z4, Z6, Z2, Z3 (`PairCompositionService`) | `PLAN.md` этап 5, `BRIEF.md` §2 |
-| **6 H2H** | planned | Z7, Z8, Z3, Z2 (`H2hRepository`) | `05-h2h.md`, `FORMULAR.md` §P3 |
+| **5 Пол игрока** | **✓** | Z4, Z6, Z2, Z3 (`PairCompositionService`) | `PLAN.md` этап 5, `spike-parser.md` §7 |
+| **6 H2H** | **→ текущий** | Z7, Z8, Z3, Z2 (`H2hRepository`) | `05-h2h.md`, `FORMULAR.md` §P3 |
 | 7 Партнёры | planned | Z8, Z3, Z4, Z6 | `08-partner-pick.md`, `FORMULAR.md` §3 |
 | 8 Привязка TG | planned | Z7, Z8, Z2 | `PLAN.md` этап 8, `BRIEF.md` §6.1 |
 | 9 Лайв MVP | planned | Z7, Z2, Z8 | `PLAN.md` этап 9, `BRIEF.md` §6.2 |
