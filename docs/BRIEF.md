@@ -253,27 +253,24 @@ P = (1 - w) · P_model + w · P_h2h
 
 ### Score совместимости (0–100)
 
-Три нормализованных компонента (0–1):
+Компоненты (0–1, кроме `C_form` ∈ [−1, 1]):
 
 ```
-C_limit = min(1, (R_A + R_B) / 2 / limit)     # ближе к лимиту (не выше) — лучше
-C_delta = sigmoid(Δ_joint_w / D_scale)        # Δ_joint_w = Σ Δ_i·w(Δt_i) по всем совместным турнирам (w — как S)
+C_limit = min(C_pair, C_player)                   # см. FORMULAR §2.5
+C_delta = sigmoid(Δ_joint_w / D_scale)            # Δ_joint_w ≤ 0 → 0
 C_S     = S_partner / (S_partner + S_ref_partner)
+C_form  = Form кандидата (§2.2), нормировка §2.5 FORMULAR; при Form &gt; 0 умножение на k_stab по зоне §2.8
+C_accent = sigmoid(δ_cat / D_scale)               # δ_cat ≤ 0 или нет матчей типа турнира → 0
 ```
 
-Итог:
+`δ_cat` — взвешенная средняя δ по матчам **разряда турнира** (MD/WD/XD), §2.7; не привязана к «рекомендуемой» категории на карточке.
+
 ```
-score_base = 100 · (w1·C_limit + w2·C_delta + w3·C_S)
-
-Form_cand > 0:  bonus  = w_form_plus · (sigmoid(Form/F_form) − 0.5) / 0.5
-Form_cand < 0:  penalty = w_form_minus · min(1, |Form|/F_form)
-нет данных:     bonus = penalty = 0
-
-score = clamp(score_base + 100·bonus − 100·penalty, 0, 100)
+score = clamp(100 · (w1·C_limit + w2·C_delta + w3·C_S + w4·C_form + w5·C_accent), 0, 100)
 ```
 
-`w1`, `w2`, `w3`, `D_scale`, `S_ref_partner`, `F_form`, `w_form_plus`, `w_form_minus`, `T` — **в конфиге** (`T` — сортировка/⭐ в bot).
-Для «Новых кандидатов» без совместной истории: `C_delta = 0`, `C_S = 0` (score ≈ только от C_limit).
+`w1`…`w5`, `D_scale`, `S_ref_partner`, `F_form`, `T` — **в конфиге** (`T` — сортировка/⭐ в bot).
+Для «Новых кандидатов» без совместной истории: `C_delta = 0`, `C_S = 0`.
 
 ## 6.1 Привязка Telegram ↔ игрок (v1, этап 8)
 

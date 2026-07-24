@@ -66,6 +66,24 @@ class GameAccentServiceTest {
     }
 
     @Test
+    void avgDeltaForTypeIndependentOfStrengthLabel() {
+        var mdWin = event(NOW.minus(HALF_LIFE), 10.0, PairCompositionType.MD);
+        var xdOk = event(NOW.minus(TWO_WEEKS), 4.0, PairCompositionType.XD);
+        var events = List.of(mdWin, mdWin, mdWin, xdOk, xdOk, xdOk);
+
+        assertEquals(10.0, service.avgWeightedDeltaForType(NOW, events, PairCompositionType.MD).orElseThrow(), 0.01);
+        assertEquals(4.0, service.avgWeightedDeltaForType(NOW, events, PairCompositionType.XD).orElseThrow(), 0.01);
+        assertEquals(PairCompositionType.MD, service.accent(NOW, events).orElseThrow().strengthType());
+    }
+
+    @Test
+    void avgDeltaForTypeEmptyWhenNoMatchesOfType() {
+        var md = event(NOW, 5.0, PairCompositionType.MD);
+        var events = List.of(md, md, md);
+        assertTrue(service.avgWeightedDeltaForType(NOW, events, PairCompositionType.XD).isEmpty());
+    }
+
+    @Test
     void gamesInWindowCountsOnlyRecentHalfYear() {
         var inWindow = event(NOW.minus(TWO_WEEKS), 1.0, PairCompositionType.XD);
         var outWindow = event(NOW.minus(Duration.ofDays(200)), 1.0, PairCompositionType.XD);

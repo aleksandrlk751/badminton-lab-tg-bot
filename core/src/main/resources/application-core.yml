@@ -20,15 +20,21 @@ badminton-lab:
     s-ref: 1.0
     b-max: 20.0
     s0: 1.0
-    w1: 0.4
-    w2: 0.3
-    w3: 0.3
+    w1: 0.35
+    w2: 0.25
+    w3: 0.25
+    w4: 0.10
+    w5: 0.05
     d-scale: 10.0
     partner-history-months: 12
     s-ref-partner: 1.0
     partner-form-scale: 10.0
-    w-form-plus: 0.10
-    w-form-minus: 0.10
+    partner-form-stability:
+      super-stable: 1.1
+      stable: 1.0
+      middle: 0.85
+      unstable: 0.7
+      very-unstable: 0.5
     stability-surprise-threshold: 11.5
     stability-zones:
       zone2-min: 70

@@ -13,6 +13,7 @@ import ru.badmintonlab.core.repository.projection.GameAccentMatchView;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.Set;
 
 /**
@@ -37,11 +38,25 @@ public class PlayerGameAccentService {
     }
 
     public Optional<GameAccentResult> accentForCard(long playerId) {
-        List<GameAccentEvent> events = h2hRepository.findAccentMatches(playerId, PAIR_DISCIPLINES).stream()
+        List<GameAccentEvent> events = loadAccentEvents(playerId);
+        return gameAccentService.accent(events);
+    }
+
+    /**
+     * Средняя δ по типу пары (MD/WD/XD) для разряда турнира — без привязки к «рекомендуемой» категории.
+     */
+    public OptionalDouble avgDeltaForComposition(long playerId, PairCompositionType compositionType) {
+        if (compositionType == null || compositionType == PairCompositionType.UNKNOWN) {
+            return OptionalDouble.empty();
+        }
+        return gameAccentService.avgWeightedDeltaForType(loadAccentEvents(playerId), compositionType);
+    }
+
+    private List<GameAccentEvent> loadAccentEvents(long playerId) {
+        return h2hRepository.findAccentMatches(playerId, PAIR_DISCIPLINES).stream()
                 .map(this::toEvent)
                 .filter(e -> e.compositionType() != PairCompositionType.UNKNOWN)
                 .toList();
-        return gameAccentService.accent(events);
     }
 
     private GameAccentEvent toEvent(GameAccentMatchView view) {

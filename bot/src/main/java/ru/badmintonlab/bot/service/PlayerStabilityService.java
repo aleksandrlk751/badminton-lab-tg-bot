@@ -31,9 +31,13 @@ public class PlayerStabilityService {
 
     /** Emoji зоны стабильности; пусто — строка на карточке скрыта. */
     public Optional<String> stabilityEmojiForCard(long playerId) {
-        List<StabilityMatchEvent> events = loadEvents(playerId);
-        return stabilityService.stability(events)
-                .map(score -> StabilityLevel.fromScore(score, metrics.stabilityZones()).emoji());
+        return stabilityLevelIfKnown(playerId).map(StabilityLevel::emoji);
+    }
+
+    /** Зона стабильности; пусто — нет матчей с сюрпризом (§2.8). */
+    public Optional<StabilityLevel> stabilityLevelIfKnown(long playerId) {
+        return stabilityService.stability(loadEvents(playerId))
+                .map(score -> StabilityLevel.fromScore(score, metrics.stabilityZones()));
     }
 
     private List<StabilityMatchEvent> loadEvents(long playerId) {

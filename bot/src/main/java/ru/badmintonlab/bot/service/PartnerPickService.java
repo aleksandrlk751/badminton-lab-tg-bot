@@ -56,6 +56,7 @@ public class PartnerPickService {
     private final PlayerRatingRepository playerRatingRepository;
     private final PlayerFormService playerFormService;
     private final PlayerGameAccentService playerGameAccentService;
+    private final PlayerStabilityService playerStabilityService;
     private final PairCompositionService pairCompositionService;
     private final PartnerScoreService partnerScoreService;
     private final PlayabilityIndexService playabilityIndexService;
@@ -68,6 +69,7 @@ public class PartnerPickService {
                               PlayerRatingRepository playerRatingRepository,
                               PlayerFormService playerFormService,
                               PlayerGameAccentService playerGameAccentService,
+                              PlayerStabilityService playerStabilityService,
                               PairCompositionService pairCompositionService,
                               PartnerScoreService partnerScoreService,
                               PlayabilityIndexService playabilityIndexService,
@@ -79,6 +81,7 @@ public class PartnerPickService {
         this.playerRatingRepository = playerRatingRepository;
         this.playerFormService = playerFormService;
         this.playerGameAccentService = playerGameAccentService;
+        this.playerStabilityService = playerStabilityService;
         this.pairCompositionService = pairCompositionService;
         this.partnerScoreService = partnerScoreService;
         this.playabilityIndexService = playabilityIndexService;
@@ -240,6 +243,14 @@ public class PartnerPickService {
             double weightedJointDelta = playabilityIndexService.weightedValueSum(
                     Instant.now(), joint.timedJointDeltas());
             OptionalDouble candidateForm = playerFormService.formIfKnown(c.getPlayerId());
+            Optional<GameAccentResult> accent = playerGameAccentService.accentForCard(c.getPlayerId());
+            double tournamentCategoryDelta = 0;
+            if (tournamentComposition != null) {
+                tournamentCategoryDelta = playerGameAccentService
+                        .avgDeltaForComposition(c.getPlayerId(), tournamentComposition)
+                        .filter(d -> d > 0)
+                        .orElse(0);
+            }
 
             var scoreResult = partnerScoreService.score(new PartnerScoreService.Input(
                     userRating,
@@ -248,9 +259,10 @@ public class PartnerPickService {
                     maxPlayerLimit,
                     weightedJointDelta,
                     playability,
-                    candidateForm));
+                    candidateForm,
+                    tournamentCategoryDelta,
+                    playerStabilityService.stabilityLevelIfKnown(c.getPlayerId())));
 
-            Optional<GameAccentResult> accent = playerGameAccentService.accentForCard(c.getPlayerId());
             boolean categoryMatch = accent.isPresent()
                     && tournamentComposition != null
                     && tournamentComposition == accent.get().preferenceType();

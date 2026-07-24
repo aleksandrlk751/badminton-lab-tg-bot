@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalDouble;
 
 /**
  * Игровой акцент (§2.7 {@code docs/FORMULAR.md}): предпочитаемый тип парных игр и сильная сторона
@@ -95,6 +96,44 @@ public class GameAccentService {
     /** Акцент относительно текущего момента. */
     public Optional<GameAccentResult> accent(Collection<GameAccentEvent> events) {
         return accent(Instant.now(), events);
+    }
+
+    /**
+     * Взвешенная средняя δ (§2.7, {@code Strength(type)}) по матчам заданного типа пары.
+     * Не требует порога {@code W_min} карточки — для подбора партнёра по разряду турнира.
+     *
+     * @return пусто, если матчей этого типа нет или тип {@link PairCompositionType#UNKNOWN}
+     */
+    public OptionalDouble avgWeightedDeltaForType(Instant reference,
+                                                  Collection<GameAccentEvent> events,
+                                                  PairCompositionType type) {
+        if (type == null || type == PairCompositionType.UNKNOWN) {
+            return OptionalDouble.empty();
+        }
+        GameAccentMetrics config = metrics.gameAccent();
+        double halfLife = config.halfLifeDays();
+        double earlyMax = config.earlyDecayMax().doubleValue();
+        double earlyPower = config.earlyDecayPower().doubleValue();
+        double weightSum = 0.0;
+        double deltaWeightedSum = 0.0;
+        for (GameAccentEvent event : events) {
+            if (event.compositionType() != type) {
+                continue;
+            }
+            double w = MetricMath.decayWeight(
+                    reference, event.playedAt(), halfLife, earlyMax, earlyPower);
+            weightSum += w;
+            deltaWeightedSum += event.delta() * w;
+        }
+        if (weightSum <= 0.0) {
+            return OptionalDouble.empty();
+        }
+        return OptionalDouble.of(deltaWeightedSum / weightSum);
+    }
+
+    public OptionalDouble avgWeightedDeltaForType(Collection<GameAccentEvent> events,
+                                                  PairCompositionType type) {
+        return avgWeightedDeltaForType(Instant.now(), events, type);
     }
 
     private static PairCompositionType bestByWeight(Map<PairCompositionType, Double> weights) {

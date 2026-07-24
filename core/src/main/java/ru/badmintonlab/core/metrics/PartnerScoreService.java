@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 import ru.badmintonlab.core.config.MetricsProperties;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 import java.util.OptionalDouble;
 
 /**
@@ -23,18 +24,21 @@ public class PartnerScoreService {
             double ratingCandidate,
             Double ratingLimit,
             Double maxPlayerRatingLimit,
-            /** Взвешенная по свежести сумма совместных дельт (§2.5 {@code docs/FORMULAR.md}). */
             double jointDeltaSum,
             double partnerPlayability,
-            /** Форма кандидата (§2.2); пусто — не влияет на score. */
-            OptionalDouble candidateForm
+            OptionalDouble candidateForm,
+            double tournamentCategoryDelta,
+            /** Зона стабильности кандидата (§2.8); пусто — множитель 1.0 при Form &gt; 0. */
+            Optional<StabilityLevel> candidateStability
     ) {}
 
     public record Result(
             double score,
             double cLimit,
             double cDelta,
-            double cPlayability
+            double cPlayability,
+            double cForm,
+            double cAccent
     ) {}
 
     public Result score(Input input) {
@@ -50,19 +54,22 @@ public class PartnerScoreService {
         double cS = input.partnerPlayability() > 0
                 ? input.partnerPlayability() / (input.partnerPlayability() + sRef)
                 : 0.0;
+        double cForm = cForm(input.candidateForm(), input.candidateStability());
+        double cAccent = input.tournamentCategoryDelta() > 0
+                ? MetricMath.sigmoid(input.tournamentCategoryDelta() / metrics.dScale().doubleValue())
+                : 0.0;
 
         double w1 = metrics.w1().doubleValue();
         double w2 = metrics.w2().doubleValue();
         double w3 = metrics.w3().doubleValue();
-        double scoreBase = 100.0 * (w1 * cLimit + w2 * cDelta + w3 * cS);
-        double score = clampScore(scoreBase + 100.0 * formScoreFraction(input.candidateForm()));
-        return new Result(score, cLimit, cDelta, cS);
+        double w4 = metrics.w4().doubleValue();
+        double w5 = metrics.w5().doubleValue();
+        double scoreBase = 100.0 * (w1 * cLimit + w2 * cDelta + w3 * cS + w4 * cForm + w5 * cAccent);
+        double score = clampScore(scoreBase);
+        return new Result(score, cLimit, cDelta, cS, cForm, cAccent);
     }
 
-    /**
-     * Доля score (0..1) от формы кандидата: бонус sigmoid при Form&gt;0, линейный штраф при Form&lt;0.
-     */
-    private double formScoreFraction(OptionalDouble candidateForm) {
+    private double cForm(OptionalDouble candidateForm, Optional<StabilityLevel> stability) {
         if (candidateForm.isEmpty()) {
             return 0.0;
         }
@@ -72,13 +79,14 @@ public class PartnerScoreService {
         }
         double scale = metrics.partnerFormScale().doubleValue();
         if (form > 0) {
-            double sig = MetricMath.sigmoid(form / scale);
-            double normalized = (sig - 0.5) / 0.5;
-            return metrics.wFormPlus().doubleValue() * Math.min(1.0, Math.max(0.0, normalized));
+            double effectiveForm = form;
+            if (stability.isPresent()) {
+                effectiveForm = form * metrics.partnerFormStability().multiplier(stability.get());
+            }
+            double sig = MetricMath.sigmoid(effectiveForm / scale);
+            return Math.min(1.0, Math.max(0.0, (sig - 0.5) / 0.5));
         }
-        double penalty = metrics.wFormMinus().doubleValue()
-                * Math.min(1.0, Math.abs(form) / scale);
-        return -penalty;
+        return -Math.min(1.0, Math.abs(form) / scale);
     }
 
     private static double clampScore(double score) {

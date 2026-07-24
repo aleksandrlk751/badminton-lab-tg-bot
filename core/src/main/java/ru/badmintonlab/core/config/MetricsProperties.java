@@ -16,12 +16,13 @@ public record MetricsProperties(
         BigDecimal w1,
         BigDecimal w2,
         BigDecimal w3,
+        BigDecimal w4,
+        BigDecimal w5,
         BigDecimal dScale,
         int partnerHistoryMonths,
         BigDecimal sRefPartner,
         BigDecimal partnerFormScale,
-        BigDecimal wFormPlus,
-        BigDecimal wFormMinus,
+        PartnerFormStabilityMultipliers partnerFormStability,
         BigDecimal stabilitySurpriseThreshold,
         StabilityZoneMetrics stabilityZones,
         GameAccentMetrics gameAccent
@@ -43,8 +44,11 @@ public record MetricsProperties(
         if (partnerFormScale == null || partnerFormScale.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("partnerFormScale must be positive");
         }
-        validateUnitFraction(wFormPlus, "wFormPlus");
-        validateUnitFraction(wFormMinus, "wFormMinus");
+        if (partnerFormStability == null) {
+            throw new IllegalArgumentException("partnerFormStability must be configured");
+        }
+        validateUnitFraction(w4, "w4");
+        validateUnitFraction(w5, "w5");
         if (stabilitySurpriseThreshold == null || stabilitySurpriseThreshold.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("stabilitySurpriseThreshold must be positive");
         }
