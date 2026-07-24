@@ -46,4 +46,14 @@ class PlayabilityIndexServiceTest {
         Instant future = NOW.plus(HALF_LIFE);
         assertEquals(0.8, service.index(NOW, List.of(future)), 1e-9);
     }
+
+    @Test
+    void weightedValueSumScalesValuesByFreshness() {
+        double fresh = service.weightedValueSum(NOW, List.of(
+                new PlayabilityIndexService.TimedValue(NOW, 10.0)));
+        double older = service.weightedValueSum(NOW, List.of(
+                new PlayabilityIndexService.TimedValue(NOW.minus(HALF_LIFE), 10.0)));
+        assertEquals(8.0, fresh, 1e-9);
+        assertEquals(5.0, older, 1e-9);
+    }
 }

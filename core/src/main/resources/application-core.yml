@@ -26,7 +26,6 @@ badminton-lab:
     d-scale: 10.0
     partner-history-months: 12
     s-ref-partner: 1.0
-    partner-boost: 1.2
     stability-surprise-threshold: 11.5
     stability-zones:
       zone2-min: 70

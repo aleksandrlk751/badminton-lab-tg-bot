@@ -26,7 +26,6 @@ final class TestMetrics {
                 new BigDecimal("10.0"),
                 12,
                 new BigDecimal("1.0"),
-                new BigDecimal("1.2"),
                 new BigDecimal("11.5"),
                 stabilityZoneDefaults(),
                 gameAccentDefaults());

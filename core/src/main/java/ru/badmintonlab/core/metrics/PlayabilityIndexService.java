@@ -40,4 +40,25 @@ public class PlayabilityIndexService {
     public double index(Collection<Instant> meetingTimes) {
         return index(Instant.now(), meetingTimes);
     }
+
+    /**
+     * Взвешенная сумма значений по моментам: {@code Σ value · w(Δt)} с той же кривой {@code w}, что §2.1–2.2.
+     * Для score партнёра — суммарная дельта пары на каждом совместном турнире.
+     */
+    public double weightedValueSum(Instant reference, Collection<TimedValue> events) {
+        if (events.isEmpty()) {
+            return 0.0;
+        }
+        double halfLife = metrics.halfLifeDays();
+        double earlyMax = metrics.earlyDecayMax().doubleValue();
+        double earlyPower = metrics.earlyDecayPower().doubleValue();
+        double sum = 0.0;
+        for (TimedValue event : events) {
+            double w = MetricMath.decayWeight(reference, event.at(), halfLife, earlyMax, earlyPower);
+            sum += event.value() * w;
+        }
+        return sum;
+    }
+
+    public record TimedValue(Instant at, double value) {}
 }

@@ -22,9 +22,9 @@ public class PartnerScoreService {
             double ratingCandidate,
             Double ratingLimit,
             Double maxPlayerRatingLimit,
+            /** Взвешенная по свежести сумма совместных дельт (§2.5 {@code FORMULAR.md}). */
             double jointDeltaSum,
-            double partnerPlayability,
-            boolean successfulHistoryBlock
+            double partnerPlayability
     ) {}
 
     public record Result(
@@ -51,9 +51,8 @@ public class PartnerScoreService {
         double w1 = metrics.w1().doubleValue();
         double w2 = metrics.w2().doubleValue();
         double w3 = metrics.w3().doubleValue();
-        double base = 100.0 * (w1 * cLimit + w2 * cDelta + w3 * cS);
-        double boost = input.successfulHistoryBlock() ? partnerBoost() : 1.0;
-        return new Result(base * boost, cLimit, cDelta, cS);
+        double score = 100.0 * (w1 * cLimit + w2 * cDelta + w3 * cS);
+        return new Result(score, cLimit, cDelta, cS);
     }
 
     private static double cLimit(double ratingUser,
@@ -90,10 +89,5 @@ public class PartnerScoreService {
     private double sRefPartner() {
         BigDecimal ref = metrics.sRefPartner();
         return ref != null ? ref.doubleValue() : metrics.sRef().doubleValue();
-    }
-
-    private double partnerBoost() {
-        BigDecimal boost = metrics.partnerBoost();
-        return boost != null ? boost.doubleValue() : 1.2;
     }
 }

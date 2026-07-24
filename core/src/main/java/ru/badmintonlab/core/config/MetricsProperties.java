@@ -19,7 +19,6 @@ public record MetricsProperties(
         BigDecimal dScale,
         int partnerHistoryMonths,
         BigDecimal sRefPartner,
-        BigDecimal partnerBoost,
         BigDecimal stabilitySurpriseThreshold,
         StabilityZoneMetrics stabilityZones,
         GameAccentMetrics gameAccent

@@ -18,6 +18,7 @@ import ru.badmintonlab.core.metrics.GameAccentResult;
 import ru.badmintonlab.core.metrics.PairCompositionService;
 import ru.badmintonlab.core.metrics.PartnerScoreService;
 import ru.badmintonlab.core.metrics.PlayabilityIndexService;
+import ru.badmintonlab.core.metrics.PlayabilityIndexService.TimedValue;
 import ru.badmintonlab.core.repository.PartnerPickRepository;
 import ru.badmintonlab.core.repository.PlayerRatingRepository;
 import ru.badmintonlab.core.repository.PlayerRepository;
@@ -235,15 +236,16 @@ public class PartnerPickService {
             boolean successful = joint.positiveDeltaSince(historySince);
             boolean playedBefore = playedBeforeBlock || joint.hasMeetings();
             double playability = playabilityIndexService.index(joint.meetingTimes());
+            double weightedJointDelta = playabilityIndexService.weightedValueSum(
+                    Instant.now(), joint.timedJointDeltas());
 
             var scoreResult = partnerScoreService.score(new PartnerScoreService.Input(
                     userRating,
                     candidateRating,
                     pairLimit,
                     maxPlayerLimit,
-                    joint.deltaSumSince(historySince),
-                    playability,
-                    successful));
+                    weightedJointDelta,
+                    playability));
 
             Optional<GameAccentResult> accent = playerGameAccentService.accentForCard(c.getPlayerId());
             boolean categoryMatch = accent.isPresent()
@@ -376,6 +378,10 @@ public class PartnerPickService {
 
         boolean positiveDeltaSince(Instant since) {
             return deltaSumSince(since) > 0;
+        }
+
+        List<TimedValue> timedJointDeltas() {
+            return deltas.stream().map(d -> new TimedValue(d.at, d.sum)).toList();
         }
 
         private record DeltaAt(Instant at, double sum) {}
