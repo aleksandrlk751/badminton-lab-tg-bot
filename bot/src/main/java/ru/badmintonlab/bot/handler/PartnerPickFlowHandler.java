@@ -61,6 +61,11 @@ public class PartnerPickFlowHandler {
                 sessionStore.clear(chatId);
                 yield editFlow(chatId, messageId, texts.partnerEntry(), keyboards.partnerEntry());
             }
+            case CallbackData.PARTNER_BACK_USER -> {
+                long tournamentId = Long.parseLong(parts[1]);
+                sessionStore.put(chatId, ChatSession.partnerPickUser(tournamentId, messageId));
+                yield editFlow(chatId, messageId, texts.partnerWhoAreYou(), null);
+            }
             case CallbackData.PARTNER_TOUR -> {
                 long tournamentId = Long.parseLong(parts[1]);
                 sessionStore.put(chatId, ChatSession.partnerPickUser(tournamentId, messageId));
@@ -133,7 +138,8 @@ public class PartnerPickFlowHandler {
         if (page.isEmpty()) {
             return editFlow(chatId, messageId, texts.partnerPickFailed(), keyboards.mainMenu());
         }
-        return editFlow(chatId, messageId, texts.partnerPick(page.get()), keyboards.partnerPickResult());
+        return editFlow(chatId, messageId, texts.partnerPick(page.get()),
+                keyboards.partnerPickResult(tournamentId));
     }
 
     private SendMessage send(long chatId, String text, InlineKeyboardMarkup markup) {

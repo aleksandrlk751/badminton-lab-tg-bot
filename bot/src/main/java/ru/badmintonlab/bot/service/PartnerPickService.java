@@ -187,25 +187,20 @@ public class PartnerPickService {
                 newcomerRaw, user, userRating, pairLimit, maxPlayerLimit,
                 tournamentComposition, historySince, jointStats, false);
 
-        Comparator<ScoredCandidate> newcomerCmp = Comparator
-                .comparing(ScoredCandidate::categoryMatch).reversed()
-                .thenComparing(ScoredCandidate::score).reversed()
-                .thenComparing(c -> c.candidate().getNick());
-
-        Comparator<ScoredCandidate> playedCmp = Comparator
-                .comparing(ScoredCandidate::successfulHistory).reversed()
-                .thenComparing(ScoredCandidate::categoryMatch).reversed()
-                .thenComparing(ScoredCandidate::score).reversed()
+        Comparator<ScoredCandidate> displayOrder = Comparator
+                .comparing(ScoredCandidate::score).reversed()
+                .thenComparing(ScoredCandidate::successfulHistory).reversed()
+                .thenComparing(ScoredCandidate::rating).reversed()
                 .thenComparing(c -> c.candidate().getNick());
 
         List<PartnerCandidateRow> playedRows = playedScored.stream()
-                .sorted(playedCmp)
+                .sorted(displayOrder)
                 .limit(MAX_DISPLAY)
                 .map(s -> toRow(s, userRating))
                 .toList();
 
         List<PartnerCandidateRow> newcomerRows = newcomerScored.stream()
-                .sorted(newcomerCmp)
+                .sorted(displayOrder)
                 .limit(MAX_DISPLAY)
                 .map(s -> toRow(s, userRating))
                 .toList();

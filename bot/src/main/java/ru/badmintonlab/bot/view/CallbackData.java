@@ -32,6 +32,7 @@ public final class CallbackData {
     public static final String PARTNER_NEAR = "pn";         // pn
     public static final String PARTNER_LINK = "pl";          // pl
     public static final String PARTNER_BACK = "pb";          // pb — к выбору способа
+    public static final String PARTNER_BACK_USER = "pub";  // pub:{tournamentId} — другой игрок на том же турнире
 
     public static final String NOOP = "noop";
 
@@ -84,6 +85,10 @@ public final class CallbackData {
 
     public static String partnerSelectUser(long tournamentId, long playerId) {
         return PARTNER_SELECT_USER + SEP + tournamentId + SEP + playerId;
+    }
+
+    public static String partnerBackUser(long tournamentId) {
+        return PARTNER_BACK_USER + SEP + tournamentId;
     }
 
     public static String[] parse(String data) {

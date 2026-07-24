@@ -147,8 +147,8 @@ score = clamp(100 · (w1·C_limit + w2·C_delta + w3·C_S + w4·C_form + w5·C_a
 **Локализация:** `PartnerScoreService` (`core.metrics`); `δ_cat` — `GameAccentService#avgWeightedDeltaForType`,
 `PlayerGameAccentService#avgDeltaForComposition` (bot).
 
-**Приоритет категории (не входит в score):** при равных фильтрах кандидаты с `preferenceType` игрового акцента,
-совпадающим с разрядом турнира (MD/WD/XD), сортируются выше; см. `PartnerPickService` (bot).
+**Порядок на экране (bot):** score ↓, при равенстве — успешная совместная история за `T` ↓, парный рейтинг ↓;
+совпадение категории акцента с турниром влияет на score (`C_accent`) и ⭐, но отдельным ключом сортировки не является.
 
 ### 2.7 Игровой акцент (карточка игрока)
 

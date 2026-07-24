@@ -45,6 +45,7 @@ public class Keyboards {
         rows.add(new InlineKeyboardRow(
                 button("🆚 H2H", CallbackData.h2h(card.playerId())),
                 button("📈 История рейтинга", CallbackData.history(card.playerId()))));
+        rows.add(new InlineKeyboardRow(button("⬅️ В меню", CallbackData.MENU_MAIN)));
         return InlineKeyboardMarkup.builder().keyboard(rows).build();
     }
 
@@ -139,8 +140,10 @@ public class Keyboards {
         return InlineKeyboardMarkup.builder().keyboard(rows).build();
     }
 
-    public InlineKeyboardMarkup partnerPickResult() {
+    public InlineKeyboardMarkup partnerPickResult(long tournamentId) {
         return InlineKeyboardMarkup.builder()
+                .keyboardRow(new InlineKeyboardRow(
+                        button("⬅️ Назад", CallbackData.partnerBackUser(tournamentId))))
                 .keyboardRow(new InlineKeyboardRow(button("⬅️ В меню", CallbackData.MENU_MAIN)))
                 .build();
     }

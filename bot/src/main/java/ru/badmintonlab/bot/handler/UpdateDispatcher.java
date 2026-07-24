@@ -174,7 +174,8 @@ public class UpdateDispatcher {
                 || CallbackData.PARTNER_SELECT_USER.equals(action)
                 || CallbackData.PARTNER_NEAR.equals(action)
                 || CallbackData.PARTNER_LINK.equals(action)
-                || CallbackData.PARTNER_BACK.equals(action);
+                || CallbackData.PARTNER_BACK.equals(action)
+                || CallbackData.PARTNER_BACK_USER.equals(action);
     }
 
     private static boolean isH2hAction(String action) {
