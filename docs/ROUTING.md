@@ -2,7 +2,7 @@
 
 > **Цель:** не читать весь репозиторий целиком. Сначала определить тип задачи → открыть только нужные зоны.  
 > **Точка входа:** [`AGENTS.md`](../AGENTS.md) (правила, источник данных, конвенции).  
-> **Актуально:** этапы 0–6 (подбор партнёра) в реализации; v1: 7 H2H → 8 привязка → 9 лайв → 10 VPS. График — v2.
+> **Актуально:** этапы **0–6 ✓**; **7 H2H DoD** → 8 привязка → 9 лайв → 10 VPS. График — v2.
 
 ---
 
@@ -82,8 +82,8 @@ flowchart TB
 | Файл | Зачем |
 |---|---|
 | [`AGENTS.md`](../AGENTS.md) | Правила, источник данных, этика парсинга |
-| [`docs/BRIEF.md`](BRIEF.md) §2–§4 | Модель данных, ограничения источника, метрики |
-| [`docs/PLAN.md`](PLAN.md) — обзор этапов | Что уже сделано и что следующее |
+| [`docs/BRIEF.md`](BRIEF.md) §3–§6, [`data-model.md`](data-model.md) | Метрики, UX, источник |
+| [`docs/PLAN.md`](PLAN.md) — обзор | Текущий этап 7+; архив — `PLAN-COMPLETED.md` |
 | [`docs/FORMULAR.md`](FORMULAR.md) — оглавление | Где живут формулы и дефолты (не выдумывать!) |
 | Этот файл — нужный маршрут ниже | Сужение области чтения |
 
@@ -99,14 +99,17 @@ flowchart TB
 
 | Файл | Когда читать |
 |---|---|
-| [`BRIEF.md`](BRIEF.md) | Любое изменение концепции, UX-сценариев, источника данных |
-| [`PLAN.md`](PLAN.md) | Планирование, оценка scope, DoD этапа |
-| [`FORMULAR.md`](FORMULAR.md) | Метрики S/Form/P3, рейтинг пары, константы |
-| [`spike-parser.md`](spike-parser.md) | Парсинг, fixtures, external_key, go/no-go по страницам сайта |
-| [`schema.sql`](schema.sql) | Черновик/справка по схеме (канон — Flyway в core) |
-| [`README.md`](README.md) | Локальный запуск, слепок, команды dev |
+| [`BRIEF.md`](BRIEF.md) | Любое изменение концепции, UX-сценариев |
+| [`data-model.md`](data-model.md) | Источник данных, сущности, слепок vs lazy |
+| [`PLAN.md`](PLAN.md) | Активные этапы 7–10, техдолг |
+| [`PLAN-COMPLETED.md`](PLAN-COMPLETED.md) | Архив этапов 0–6 |
+| [`FORMULAR.md`](FORMULAR.md) | Формулы S/Form/P3, рейтинг пары |
+| [`FORMULAR-CONFIG.md`](FORMULAR-CONFIG.md) | Дефолты YAML/env метрик и worker |
+| [`spike-parser.md`](spike-parser.md) | Парсинг, fixtures, external_key |
+| [`schema.sql`](schema.sql) | Черновик DDL (канон — Flyway) |
+| [`README.md`](../README.md) | Локальный запуск, слепок, `dev` |
 
-**Не читать целиком:** `BRIEF.md` — только нужные §; полный `schema.sql`, если достаточно `V1__init.sql`.
+**Не читать целиком:** `BRIEF.md` — только нужные §; полный `schema.sql`, если достаточно Flyway V1+V2.
 
 ---
 
@@ -157,6 +160,7 @@ flowchart TB
 | `FormService` | Форма по дельтам |
 | `GameAccentService` | Игровой акцент (предпочтение + сильная сторона, MD/WD/XD) |
 | `PairRatingService` | Официальный `(A+B)/2`, прогнозный рейтинг пары |
+| `PartnerScoreService` | Score совместимости партнёра (этап 6) |
 | `PairCompositionService` | Тип пары MD/WD/XD/UNKNOWN по полу двух игроков |
 | `ForecastService` | Прогноз P3 (логистика + blend H2H) |
 | `MetricMath` | Полураспад, сигмоида |
@@ -164,7 +168,7 @@ flowchart TB
 
 **Документация:** [`FORMULAR.md`](FORMULAR.md) — единственный источник формул.
 
-**Типичные задачи:** изменить/откалибровать метрику, подключить метрику в bot (этап 6+), unit-тест на формулу.
+**Типичные задачи:** изменить/откалибровать метрику, подключить метрику в bot, unit-тест на формулу. Дефолты — [`FORMULAR-CONFIG.md`](FORMULAR-CONFIG.md).
 
 **Не трогать без нужды:** `entity/`, `worker/` — метрики **чистые**, без БД.
 
@@ -241,7 +245,7 @@ flowchart TB
 
 **Типичные задачи:** новый шаг слепка, идемпотентность upsert, точечный re-import, scheduled run.
 
-**Документация:** [`README.md`](README.md) § «Слепок региона», [`PLAN.md`](PLAN.md) этап 2.
+**Документация:** [`README.md`](../README.md) § «Слепок региона», [`PLAN-COMPLETED.md`](PLAN-COMPLETED.md) этап 2.
 
 ---
 
@@ -252,7 +256,8 @@ flowchart TB
 | Класс | Назначение |
 |---|---|
 | `UpdateDispatcher` | Главный роутер: команды, callback, свободный текст |
-| `H2hFlowHandler` | Многошаговый сценарий H2H (этап 6) |
+| `H2hFlowHandler` | H2H-wizard (этап 7 DoD) |
+| `PartnerPickFlowHandler` | Подбор партнёра на турнир (этап 6) |
 | `ChatSession` / `ChatSessionStore` | Состояние диалога в памяти |
 | `BadmintonLabBot` | Spring + long polling entry |
 
@@ -275,7 +280,8 @@ flowchart TB
 | `PlayerFormService` | Форма 👊 для карточки и H2H |
 | `PlayerGameAccentService` | Игровой акцент 🎯/💪 для карточки |
 | `RivalService` / `RivalLookup` | Список соперников |
-| `H2hService` | H2H: W-L, матчи, метрики, тип пары (этап 6) |
+| `PartnerPickService` | Кандидаты партнёров, score, сортировка |
+| `H2hService` | H2H: W-L, матчи, метрики, тип пары (этап 7) |
 | `H2hLazyFetchService` | Lazy fetch с сайта при нехватке матчей |
 | `SnapshotInfoService` | Дата актуальности данных |
 
@@ -308,10 +314,10 @@ flowchart TB
 | `02-search.md` | Поиск |
 | `03-player-card.md` | Карточка |
 | `04-rivals.md` | Соперники |
-| `05-h2h.md` | H2H (этап 6) |
+| `05-h2h.md` | H2H (этап 7) |
 | `06-rating-history.md` | График (**v2**) |
 | `07-help.md` | `/help` |
-| `08-partner-pick.md` | Партнёры (этап 7) |
+| `08-partner-pick.md` | Партнёры (этап 6) |
 
 **Типичные задачи:** текст кнопки, emoji, новая клавиатура, правка формата карточки.
 
@@ -328,19 +334,19 @@ flowchart TB
 | **Новый экран бота / UX** | bootstrap → `docs/messages/XX-*.md` → Z7 → Z9 → Z8 (нужный сервис) | bot, возможно core |
 | **Поиск игроков** | Z8 (`PlayerSearch*`) → `PlayerRepository` → `V1__init.sql` (индексы trgm) | bot, core |
 | **Карточка / соперники** | `03-player-card.md`, `04-rivals.md` → Z8 → Z2 (`RivalSummary*`) | bot, core |
-| **H2H (этап 6)** | `05-h2h.md` → Z7 (`H2hFlowHandler`) → Z8 (`H2h*`) → Z3 (`PairCompositionService`) → `H2hRepository` → Z4 | bot, core, worker |
+| **H2H (этап 7)** | `05-h2h.md` → Z7 (`H2hFlowHandler`) → Z8 (`H2h*`) → Z3 → `H2hRepository` → Z4 | bot, core, worker |
 | **Пол игрока (этап 5)** | `PLAN.md` этап 5 → Z4 (`PlayerDirectoryParser`, `PlayerProfileSexEvidenceParser`) → Z5 (`PlayerDirectoryLoader`) → Z6 → Z2 (`Player` + V2) → Z3 | worker, core |
 | **Формула / метрика** | `FORMULAR.md` → Z3 → тесты `core/.../metrics/` | core |
-| **Схема БД / миграция** | `BRIEF.md` §2 → Z2 → `schema.sql` (справка) → `V1__init.sql`, `V2__player_sex.sql` | core |
+| **Схема БД / миграция** | `data-model.md` → Z2 → `schema.sql` → Flyway V1–V2+ | core |
 | **Парсер сломался / новое поле** | `spike-parser.md` → Z4 → fixture → тест `worker/.../parser/` | worker |
 | **Новая страница сайта** | `spike-parser.md` → Z5 → Z4 (новый parser) → Z6 (включить в pipeline) | worker |
 | **Слепок / upsert / rival_summary** | `README.md` §слепок → Z6 → Z2 (entity) → Z4 | worker, core |
 | **Rate-limit / HTTP** | Z5 → `ParserProperties` | worker |
 | **Lazy fetch из бота** | Z8 (`H2hLazyFetchService`) → Z5 (паттерны) → `BotFetchConfig` | bot, worker (реф.) |
-| **Конфиг метрик** | `FORMULAR.md` → `application-core.yml` → `MetricsProperties` | core |
-| **Локальный запуск / CI** | Z1 → `README.md` | root |
+| **Конфиг метрик** | `FORMULAR.md` → `FORMULAR-CONFIG.md` → `application-core.yml` → `MetricsProperties` | core |
+| **Локальный запуск / CI** | Z1 → [`README.md`](../README.md) | root |
 | **Деплой VPS (этап 10)** | Z1 → `PLAN.md` этап 10 → `docker-compose.yml` | root, все модули |
-| **Подбор партнёра (этап 7)** | `08-partner-pick.md` → Z3 → Z2 → Z4 (`TournamentRegistrationParser`) → Z6 | bot, core, worker |
+| **Подбор партнёра (этап 6)** | `08-partner-pick.md` → Z7 (`PartnerPickFlowHandler`) → Z8 (`PartnerPickService`) → Z3 → Z6 | bot, core, worker |
 | **Привязка TG (этап 8)** | `PLAN.md` этап 8 → Z7 → Z2 (новая сущность link) → Z8 | bot, core |
 | **Лайв MVP (этап 9)** | `PLAN.md` этап 9 → Z7 (FSM) → Z2 (live entities) → Z8 | bot, core |
 | **График рейтинга (v2)** | `06-rating-history.md` → Z8 → Z2 (`PlayerRatingHistory`) | bot, core |
@@ -353,13 +359,13 @@ flowchart TB
 | Этап | Статус | Зоны | Ключевые документы |
 |---|---|---|---|
 | 0 Spike | ✓ | Z4, fixtures | `spike-parser.md` |
-| 1 Каркас | ✓ | Z1, Z2 | `PLAN.md`, `README.md` |
-| 2 Worker слепок | ✓ | Z5, Z6, Z4 | `README.md`, `spike-parser.md` |
+| 1 Каркас | ✓ | Z1, Z2 | `PLAN-COMPLETED.md`, [`README.md`](../README.md) |
+| 2 Worker слепок | ✓ | Z5, Z6, Z4 | [`README.md`](../README.md), `spike-parser.md` |
 | 3 Метрики | ✓ | Z3 | `FORMULAR.md` |
 | 4 Bot shell | ✓ | Z7, Z8, Z9 | `docs/messages/01–04` |
-| **5 Пол игрока** | **✓** | Z4, Z6, Z2, Z3 (`PairCompositionService`) | `PLAN.md` этап 5, `spike-parser.md` §7 |
-| **6 H2H** | **→ текущий** | Z7, Z8, Z3, Z2 (`H2hRepository`) | `05-h2h.md`, `FORMULAR.md` §P3 |
-| 7 Партнёры | planned | Z8, Z3, Z4, Z6 | `08-partner-pick.md`, `FORMULAR.md` §3 |
+| **5 Пол игрока** | **✓** | Z4, Z6, Z2, Z3 | `PLAN-COMPLETED.md`, `spike-parser.md` §7 |
+| **6 Партнёры** | **✓** | Z7, Z8, Z3, Z6 | `08-partner-pick.md`, `FORMULAR.md` §2.5 |
+| **7 H2H** | **→ текущий** | Z7, Z8, Z3, Z2 (`H2hRepository`) | `05-h2h.md`, `FORMULAR.md` §2.3 |
 | 8 Привязка TG | planned | Z7, Z8, Z2 | `PLAN.md` этап 8, `BRIEF.md` §6.1 |
 | 9 Лайв MVP | planned | Z7, Z2, Z8 | `PLAN.md` этап 9, `BRIEF.md` §6.2 |
 | 10 VPS | planned | Z1 | `PLAN.md` этап 10 |
@@ -371,7 +377,7 @@ flowchart TB
 
 | Область | Почему |
 |---|---|
-| Весь `BRIEF.md` (~275 строк) | Достаточно нужного § + `FORMULAR.md` |
+| Весь `BRIEF.md` (~320 строк) | Достаточно нужного § + `data-model.md` / `FORMULAR.md` |
 | Все 40+ entity/repository файлов | Открывать точечно по таблице из задачи |
 | `worker/target/`, `core/target/`, `bot/target/` | Артефакты сборки |
 | `.run/*.log` | Локальные логи dev-запуска |
@@ -399,7 +405,7 @@ flowchart TB
   → сервисы bot (Z8), если меняется контракт чтения
 
 Изменил метрику (Z3)
-  → FORMULAR.md + MetricsProperties
+  → FORMULAR.md + FORMULAR-CONFIG.md + MetricsProperties
   → H2hService / Forecast (Z8) при показе в UI
 
 Изменил callback / экран (Z7, Z9)
@@ -432,4 +438,4 @@ flowchart TB
 
 ---
 
-*Последнее обновление структуры: 2026-07-22 (этапы 0–4 ✓, H2H в progress).*
+*Последнее обновление: 2026-07-24 (этапы 0–6 ✓, H2H DoD — этап 7).*

@@ -1,6 +1,7 @@
 -- Черновик схемы PostgreSQL для badminton-lab-tg-bot
 -- Управление: Flyway (Spring Boot). ORM: Spring Data JPA.
 -- PK сущностей Player/Tournament = ID с badminton4u.ru
+-- Синхронизировать с core/src/main/resources/db/migration/ (V1 + V2 player.sex + …)
 
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
@@ -28,6 +29,7 @@ CREATE TABLE player (
     city            VARCHAR(128),
     birth_date      DATE,
     playing_hand    VARCHAR(16),              -- 'RIGHT', 'LEFT'
+    sex             VARCHAR(1),               -- 'M' / 'F' (Flyway V2: enum player_sex)
     hall_id         BIGINT,
     registered_at   DATE,
     last_seen_at    TIMESTAMPTZ,

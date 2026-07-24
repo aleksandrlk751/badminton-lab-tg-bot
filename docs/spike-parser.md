@@ -37,7 +37,7 @@
 ```
 
 > Surefire: `forkCount=0` из-за кириллицы в `%TEMP%` на Windows.  
-> Полная сборка всех модулей: `.\dev verify`. См. [`README.md`](README.md).
+> Полная сборка всех модулей: `.\dev verify`. См. [`README.md`](../README.md).
 
 ## Парсеры (unit-тесты green)
 
@@ -93,7 +93,7 @@ badminton4u:game:{tournamentId}:{playedAt}:{sortedA}:vs{sortedB}:{scoreSets}:{st
 | Справочник пола `players/?sex_m/f` | **GO** — SSR + AJAX-пагинация (`PlayerDirectoryLoader`) |
 | H2H `games/?user1&user2` | **Условно** — нужен AJAX или агрегация из `gamesd` |
 
-**Этап 0 закрыт.** Следующий шаг — этап 2 (worker: слепок r77). Локальные команды: [`README.md`](README.md).
+**Этап 0 закрыт.** Локальные команды: [`README.md`](../README.md).
 
 ## Примеры для ручной сверки
 
