@@ -33,16 +33,18 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class PartnerPickService {
 
     private static final int MAX_CANDIDATES = 150;
-    private static final int MAX_DISPLAY = 12;
+    private static final int MAX_DISPLAY = 5;
     private static final String REGION = "r77";
 
     private final TournamentRepository tournamentRepository;
@@ -131,34 +133,107 @@ public class PartnerPickService {
             return Optional.empty();
         }
 
-        List<PartnerCandidateView> raw = partnerPickRepository.findCandidates(
+        List<Long> excludedIds = excluded.isEmpty() ? List.of() : excluded.stream().toList();
+        int excludeCount = excluded.size();
+
+        List<PartnerCandidateView> playedRaw = partnerPickRepository.findFormerPartners(
                 userId,
                 userRating,
                 pairLimit,
                 maxPlayerLimit,
                 Discipline.D,
                 allowedSexes,
-                excluded.size(),
-                excluded.isEmpty() ? List.of() : excluded.stream().toList());
+                excludeCount,
+                excludedIds);
 
-        if (raw.size() > MAX_CANDIDATES) {
-            raw = raw.subList(0, MAX_CANDIDATES);
+        List<PartnerCandidateView> newcomerRaw = partnerPickRepository.findCandidates(
+                userId,
+                userRating,
+                pairLimit,
+                maxPlayerLimit,
+                Discipline.D,
+                allowedSexes,
+                excludeCount,
+                excludedIds);
+        if (newcomerRaw.size() > MAX_CANDIDATES) {
+            newcomerRaw = newcomerRaw.subList(0, MAX_CANDIDATES);
         }
 
-        List<Long> partnerIds = raw.stream().map(PartnerCandidateView::getPlayerId).toList();
-        Map<Long, JointStats> jointStats = loadJointStats(userId, partnerIds);
+        Set<Long> formerPartnerIds = playedRaw.stream()
+                .map(PartnerCandidateView::getPlayerId)
+                .collect(Collectors.toCollection(HashSet::new));
+        newcomerRaw = newcomerRaw.stream()
+                .filter(c -> !formerPartnerIds.contains(c.getPlayerId()))
+                .toList();
+
+        Set<Long> jointStatsIds = new HashSet<>(formerPartnerIds);
+        newcomerRaw.stream().map(PartnerCandidateView::getPlayerId).forEach(jointStatsIds::add);
+        Map<Long, JointStats> jointStats = loadJointStats(userId, List.copyOf(jointStatsIds));
 
         PairCompositionType tournamentComposition =
                 TournamentDisciplineSupport.compositionForTournament(pairDiscipline);
         Instant historySince = Instant.now().minus(
                 metricsProperties.partnerHistoryMonths() * 30L, ChronoUnit.DAYS);
 
+        List<ScoredCandidate> playedScored = scoreCandidates(
+                playedRaw, user, userRating, pairLimit, maxPlayerLimit,
+                tournamentComposition, historySince, jointStats, true);
+        List<ScoredCandidate> newcomerScored = scoreCandidates(
+                newcomerRaw, user, userRating, pairLimit, maxPlayerLimit,
+                tournamentComposition, historySince, jointStats, false);
+
+        Comparator<ScoredCandidate> newcomerCmp = Comparator
+                .comparing(ScoredCandidate::categoryMatch).reversed()
+                .thenComparing(ScoredCandidate::score).reversed()
+                .thenComparing(c -> c.candidate().getNick());
+
+        Comparator<ScoredCandidate> playedCmp = Comparator
+                .comparing(ScoredCandidate::successfulHistory).reversed()
+                .thenComparing(ScoredCandidate::categoryMatch).reversed()
+                .thenComparing(ScoredCandidate::score).reversed()
+                .thenComparing(c -> c.candidate().getNick());
+
+        List<PartnerCandidateRow> playedRows = playedScored.stream()
+                .sorted(playedCmp)
+                .limit(MAX_DISPLAY)
+                .map(s -> toRow(s, userRating))
+                .toList();
+
+        List<PartnerCandidateRow> newcomerRows = newcomerScored.stream()
+                .sorted(newcomerCmp)
+                .limit(MAX_DISPLAY)
+                .map(s -> toRow(s, userRating))
+                .toList();
+
+        String userLabel = formatUserLabel(user);
+        return Optional.of(new PartnerPickPage(
+                tournamentId,
+                tournament.getName(),
+                tournament.getStartsAt(),
+                tournament.getRatingLimit(),
+                tournament.getMaxPlayerRatingLimit(),
+                userId,
+                userLabel,
+                userRating,
+                playedRows,
+                newcomerRows));
+    }
+
+    private List<ScoredCandidate> scoreCandidates(List<PartnerCandidateView> raw,
+                                                  Player user,
+                                                  double userRating,
+                                                  Double pairLimit,
+                                                  Double maxPlayerLimit,
+                                                  PairCompositionType tournamentComposition,
+                                                  Instant historySince,
+                                                  Map<Long, JointStats> jointStats,
+                                                  boolean playedBeforeBlock) {
         List<ScoredCandidate> scored = new ArrayList<>();
         for (PartnerCandidateView c : raw) {
             double candidateRating = c.getRating().doubleValue();
             JointStats joint = jointStats.getOrDefault(c.getPlayerId(), JointStats.EMPTY);
             boolean successful = joint.positiveDeltaSince(historySince);
-            boolean playedBefore = joint.hasMeetings();
+            boolean playedBefore = playedBeforeBlock || joint.hasMeetings();
             double playability = playabilityIndexService.index(joint.meetingTimes());
 
             var scoreResult = partnerScoreService.score(new PartnerScoreService.Input(
@@ -189,44 +264,7 @@ public class PartnerPickService {
                     ideal,
                     futurePair));
         }
-
-        Comparator<ScoredCandidate> newcomerCmp = Comparator
-                .comparing(ScoredCandidate::categoryMatch).reversed()
-                .thenComparing(ScoredCandidate::score).reversed()
-                .thenComparing(c -> c.candidate().getNick());
-
-        Comparator<ScoredCandidate> playedCmp = Comparator
-                .comparing(ScoredCandidate::successfulHistory).reversed()
-                .thenComparing(ScoredCandidate::categoryMatch).reversed()
-                .thenComparing(ScoredCandidate::score).reversed()
-                .thenComparing(c -> c.candidate().getNick());
-
-        List<PartnerCandidateRow> playedRows = scored.stream()
-                .filter(ScoredCandidate::playedBefore)
-                .sorted(playedCmp)
-                .limit(MAX_DISPLAY)
-                .map(s -> toRow(s, userRating))
-                .toList();
-
-        List<PartnerCandidateRow> newcomerRows = scored.stream()
-                .filter(s -> !s.playedBefore())
-                .sorted(newcomerCmp)
-                .limit(MAX_DISPLAY)
-                .map(s -> toRow(s, userRating))
-                .toList();
-
-        String userLabel = formatUserLabel(user);
-        return Optional.of(new PartnerPickPage(
-                tournamentId,
-                tournament.getName(),
-                tournament.getStartsAt(),
-                tournament.getRatingLimit(),
-                tournament.getMaxPlayerRatingLimit(),
-                userId,
-                userLabel,
-                userRating,
-                playedRows,
-                newcomerRows));
+        return scored;
     }
 
     private static boolean fitsTournamentRating(double userRating, Double maxPlayerLimit) {
