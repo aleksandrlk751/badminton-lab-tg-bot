@@ -10,6 +10,7 @@ import java.util.List;
 public record RivalsPage(
         long playerId,
         String playerFullName,
+        String playerNick,
         Discipline discipline,
         List<RivalRow> rows,
         int page,

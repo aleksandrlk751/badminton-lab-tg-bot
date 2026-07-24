@@ -1,30 +1,20 @@
 package ru.badmintonlab.bot.view;
 
 /**
- * Текстовый уровень score совместимости партнёра (0–100, §2.5 {@code FORMULAR.md}).
+ * Формат score совместимости партнёра (0–100, §2.5 {@code FORMULAR.md}) для UI.
  */
 public final class PartnerSuitabilityLabels {
 
     private PartnerSuitabilityLabels() {
     }
 
-    /** Например: {@code подходимость: хорошая (72%)}. */
+    /** Например: {@code 🎯 72%}. */
     public static String line(double score) {
-        int pct = (int) Math.round(clampPercent(score));
-        return "подходимость: " + tier(pct) + " (" + pct + "%)";
+        return MessageEmoji.PARTNER_SUITABILITY + " " + percent(score) + "%";
     }
 
-    static String tier(int percent) {
-        if (percent >= 75) {
-            return "высокая";
-        }
-        if (percent >= 50) {
-            return "хорошая";
-        }
-        if (percent >= 30) {
-            return "средняя";
-        }
-        return "низкая";
+    static int percent(double score) {
+        return (int) Math.round(clampPercent(score));
     }
 
     private static double clampPercent(double score) {

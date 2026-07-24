@@ -210,7 +210,7 @@ public class PartnerPickService {
                 .map(s -> toRow(s, userRating))
                 .toList();
 
-        String userLabel = formatUserLabel(user);
+        String userFullName = Names.fullName(user.getLastName(), user.getFirstName(), user.getPatronymic());
         return Optional.of(new PartnerPickPage(
                 tournamentId,
                 tournament.getName(),
@@ -218,7 +218,8 @@ public class PartnerPickService {
                 tournament.getRatingLimit(),
                 tournament.getMaxPlayerRatingLimit(),
                 userId,
-                userLabel,
+                userFullName,
+                user.getNick(),
                 userRating,
                 playedRows,
                 newcomerRows));
@@ -246,10 +247,11 @@ public class PartnerPickService {
             Optional<GameAccentResult> accent = playerGameAccentService.accentForCard(c.getPlayerId());
             double tournamentCategoryDelta = 0;
             if (tournamentComposition != null) {
-                tournamentCategoryDelta = playerGameAccentService
-                        .avgDeltaForComposition(c.getPlayerId(), tournamentComposition)
-                        .filter(d -> d > 0)
-                        .orElse(0);
+                OptionalDouble categoryAvg = playerGameAccentService
+                        .avgDeltaForComposition(c.getPlayerId(), tournamentComposition);
+                if (categoryAvg.isPresent() && categoryAvg.getAsDouble() > 0) {
+                    tournamentCategoryDelta = categoryAvg.getAsDouble();
+                }
             }
 
             var scoreResult = partnerScoreService.score(new PartnerScoreService.Input(
@@ -308,17 +310,6 @@ public class PartnerPickService {
                 s.goodForm(),
                 s.ideal(),
                 s.futurePairType());
-    }
-
-    private String formatUserLabel(Player user) {
-        String name = user.getLastName() != null ? user.getLastName() : "";
-        if (user.getFirstName() != null) {
-            name = (name + " " + user.getFirstName()).trim();
-        }
-        if (name.isBlank()) {
-            return user.getNick();
-        }
-        return name + " (" + user.getNick() + ")";
     }
 
     private Map<Long, JointStats> loadJointStats(long userId, List<Long> partnerIds) {

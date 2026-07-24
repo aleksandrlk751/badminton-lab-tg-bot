@@ -300,6 +300,8 @@ flowchart TB
 | Класс | Назначение |
 |---|---|
 | `Texts` | HTML-тексты сообщений |
+| `PlayerDisplayFormat` | Подпись игрока: plain для `<pre>`, согласовано с `Texts.appendPlayerHeader` |
+| `ProfileLinks` | URL профиля badminton4u |
 | `Keyboards` | Inline-клавиатуры |
 | `CallbackData` | Кодирование callback (лимит 64 байта TG) |
 | `DisciplineLabels`, `SearchButtonLabel`, `MessageEmoji` | Форматирование |

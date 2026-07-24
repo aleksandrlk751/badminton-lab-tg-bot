@@ -11,7 +11,8 @@ public record PartnerPickPage(
         BigDecimal ratingLimit,
         BigDecimal maxPlayerRatingLimit,
         long userId,
-        String userLabel,
+        String userFullName,
+        String userNick,
         double userRating,
         List<PartnerCandidateRow> playedBefore,
         List<PartnerCandidateRow> newcomers

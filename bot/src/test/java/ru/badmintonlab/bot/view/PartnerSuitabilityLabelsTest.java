@@ -1,29 +1,20 @@
 package ru.badmintonlab.bot.view;
 
 import org.junit.jupiter.api.Test;
-import ru.badmintonlab.bot.model.PartnerCandidateRow;
-import ru.badmintonlab.bot.model.PartnerPickPage;
-import ru.badmintonlab.core.domain.PairCompositionType;
-
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PartnerSuitabilityLabelsTest {
 
     @Test
-    void tierThresholds() {
-        assertEquals("низкая", PartnerSuitabilityLabels.tier(29));
-        assertEquals("средняя", PartnerSuitabilityLabels.tier(30));
-        assertEquals("хорошая", PartnerSuitabilityLabels.tier(50));
-        assertEquals("высокая", PartnerSuitabilityLabels.tier(75));
+    void lineFormatsPercentOnly() {
+        assertEquals(MessageEmoji.PARTNER_SUITABILITY + " 62%", PartnerSuitabilityLabels.line(62.4));
     }
 
     @Test
-    void lineFormatsPercentAndTier() {
-        assertEquals("подходимость: хорошая (62%)", PartnerSuitabilityLabels.line(62.4));
+    void percentClampsAndRounds() {
+        assertEquals(100, PartnerSuitabilityLabels.percent(150));
+        assertEquals(0, PartnerSuitabilityLabels.percent(-5));
+        assertEquals(75, PartnerSuitabilityLabels.percent(74.6));
     }
 }

@@ -50,9 +50,11 @@ public class RivalService implements RivalLookup {
     @Transactional(readOnly = true)
     public RivalsPage rivals(long playerId, Discipline discipline, int page) {
         int safePage = Math.max(0, page);
-        String playerFullName = playerRepository.findById(playerId)
-                .map(p -> Names.fullName(p.getLastName(), p.getFirstName(), p.getPatronymic()))
-                .orElse("");
+        var subject = playerRepository.findById(playerId).orElse(null);
+        String playerFullName = subject == null
+                ? ""
+                : Names.fullName(subject.getLastName(), subject.getFirstName(), subject.getPatronymic());
+        String playerNick = subject == null ? null : subject.getNick();
         List<Discipline> available = disciplinesWithRivals(playerId);
 
         long total;
@@ -70,7 +72,8 @@ public class RivalService implements RivalLookup {
                     .map(this::toRow)
                     .toList();
         }
-        return new RivalsPage(playerId, playerFullName, discipline, rows, safePage, PAGE_SIZE, total, available);
+        return new RivalsPage(
+                playerId, playerFullName, playerNick, discipline, rows, safePage, PAGE_SIZE, total, available);
     }
 
     private RivalRow toRow(RivalView v) {

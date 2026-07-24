@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class RivalsPageTest {
 
     private RivalsPage page(int page, long total) {
-        return new RivalsPage(1L, "Иванов", Discipline.MD, List.of(), page, 8, total, List.of(Discipline.MD));
+        return new RivalsPage(1L, "Иванов", null, Discipline.MD, List.of(), page, 8, total, List.of(Discipline.MD));
     }
 
     @Test

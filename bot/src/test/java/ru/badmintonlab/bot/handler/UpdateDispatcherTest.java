@@ -129,7 +129,7 @@ class UpdateDispatcherTest {
     @Test
     void rivalsDefaultSendsNewMessage() {
         rival.hasRivals = true;
-        rival.page = new RivalsPage(5L, "Иванов",
+        rival.page = new RivalsPage(5L, "Иванов", "Hero",
                 null,
                 List.of(new RivalRow(2L, "Foe", "Петров", "Москва", 2, 0)),
                 0, 8, 1, List.of(Discipline.MD));
@@ -158,7 +158,7 @@ class UpdateDispatcherTest {
 
     @Test
     void rivalsPageEditsMessage() {
-        rival.page = new RivalsPage(5L, "Иванов",
+        rival.page = new RivalsPage(5L, "Иванов", "Hero",
                 Discipline.MD,
                 List.of(new RivalRow(2L, "Foe", "Петров", "Москва", 2, 0)),
                 0, 8, 1, List.of(Discipline.MD));

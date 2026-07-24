@@ -126,6 +126,7 @@ class TextsTest {
         RivalsPage page = new RivalsPage(
                 1L,
                 "Иванов Иван",
+                "Hero",
                 null,
                 List.of(new RivalRow(2L, "Foe", "Петров Пётр", "Москва", 3, 1)),
                 0,
@@ -139,6 +140,7 @@ class TextsTest {
         assertTrue(text.contains("Все"), text);
         assertTrue(text.contains("Петров Пётр"), text);
         assertFalse(text.contains("Foe"), text);
+        assertTrue(text.contains("Hero</a>"), text);
         assertTrue(text.contains(MessageEmoji.WIN + "3  " + MessageEmoji.LOSS + "1  "
                 + MessageEmoji.WIN_RATE + "75%"), text);
         assertFalse(text.contains("Москва"), text);
@@ -149,10 +151,11 @@ class TextsTest {
         RivalsPage page = new RivalsPage(
                 1L,
                 "Иванов Иван",
+                "Hero",
                 null,
                 List.of(
-                        new RivalRow(2L, null, "Петров Пётр", null, 3, 1),
-                        new RivalRow(3L, null, "Сидорова Анна", null, 2, 2)),
+                        new RivalRow(2L, "Foe", "Петров Пётр", null, 3, 1),
+                        new RivalRow(3L, "Anna", "Сидорова Анна", null, 2, 2)),
                 0,
                 8,
                 1,
@@ -165,12 +168,14 @@ class TextsTest {
         int sidorova = text.indexOf("Сидорова");
         int winPetrov = text.indexOf(MessageEmoji.WIN, petrov);
         int winSidorova = text.indexOf(MessageEmoji.WIN, sidorova);
+        assertTrue(winPetrov > petrov, text);
+        assertTrue(winSidorova > sidorova, text);
         assertEquals(winPetrov - petrov, winSidorova - sidorova);
     }
 
     @Test
     void rivalsHandlesEmptyDiscipline() {
-        RivalsPage page = new RivalsPage(1L, "Иванов", Discipline.WD, List.of(), 0, 8, 0, List.of());
+        RivalsPage page = new RivalsPage(1L, "Иванов", null, Discipline.WD, List.of(), 0, 8, 0, List.of());
         assertTrue(texts.rivals(page).contains("Встреч в разряде WD нет"));
     }
 
@@ -196,18 +201,24 @@ class TextsTest {
                 new BigDecimal("650"),
                 new BigDecimal("700"),
                 18499L,
-                "Крупская Ольга (Olya_fox)",
+                "Крупская Ольга",
+                "Olya_fox",
                 380.0,
                 List.of(row),
                 List.of());
 
         String text = texts.partnerPick(page);
 
+        assertTrue(text.contains("Потенциальные партнёры"), text);
+        assertTrue(text.contains("Игрок:"), text);
+        assertTrue(text.contains("<b>Крупская Ольга</b>"), text);
+        assertTrue(text.contains("Olya_fox"), text);
         assertTrue(text.contains("<b>Петров Пётр Сергеевич</b>"), text);
+        assertTrue(text.contains("Petrov"), text);
         assertTrue(text.contains(MessageEmoji.DOUBLE + " 395"), text);
-        assertTrue(text.contains("ср. 388"), text);
+        assertTrue(text.contains(MessageEmoji.PAIR_RATING_AVG + " ср. 388"), text);
         assertTrue(text.contains("Макс. игрок: 700"), text);
-        assertTrue(text.contains("подходимость: хорошая (62%)"), text);
-        assertFalse(text.contains("Petrov"), text);
+        assertTrue(text.contains(MessageEmoji.PARTNER_SUITABILITY + " 62%"), text);
+        assertFalse(text.contains("хорошая"), text);
     }
 }

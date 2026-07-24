@@ -11,6 +11,7 @@ import ru.badmintonlab.bot.model.RivalRow;
 import ru.badmintonlab.bot.model.RivalsPage;
 import ru.badmintonlab.core.metrics.GameAccentResult;
 import ru.badmintonlab.bot.util.Names;
+import ru.badmintonlab.bot.util.PlayerDisplayFormat;
 import ru.badmintonlab.bot.util.ProfileLinks;
 
 import java.math.BigDecimal;
@@ -113,11 +114,7 @@ public class Texts {
     }
 
     private void appendH2hPlayerLineInline(StringBuilder sb, H2hResult.H2hPlayerSide side) {
-        if (side.fullName() != null && !side.fullName().isBlank()) {
-            sb.append("<b>").append(escape(side.fullName())).append("</b>");
-        } else {
-            sb.append("<b>").append(playerLink(side.playerId(), side.nick())).append("</b>");
-        }
+        appendPlayerHeader(sb, side.playerId(), side.fullName(), side.nick());
         appendRatingsInline(sb, side.ratingS(), side.ratingD());
     }
 
@@ -139,24 +136,21 @@ public class Texts {
             sb.append("<b>Прогноз (по рейтингу и форме)</b>\n");
         }
         double pA = result.forecast().probabilityA();
-        String favoriteName;
-        int pct;
-        if (pA >= 0.5) {
-            favoriteName = Names.shortName(result.playerA().fullName());
-            if (favoriteName.isBlank()) {
-                favoriteName = result.playerA().nick() != null ? result.playerA().nick()
-                        : String.valueOf(result.playerA().playerId());
-            }
-            pct = (int) Math.round(pA * 100);
-        } else {
-            favoriteName = Names.shortName(result.playerB().fullName());
-            if (favoriteName.isBlank()) {
-                favoriteName = result.playerB().nick() != null ? result.playerB().nick()
-                        : String.valueOf(result.playerB().playerId());
-            }
-            pct = (int) Math.round((1.0 - pA) * 100);
+        H2hResult.H2hPlayerSide favorite = pA >= 0.5 ? result.playerA() : result.playerB();
+        int pct = (int) Math.round((pA >= 0.5 ? pA : 1.0 - pA) * 100);
+        sb.append("Фаворит: ");
+        appendForecastFavorite(sb, favorite);
+        sb.append(" (≈").append(pct).append("%)");
+    }
+
+    private void appendForecastFavorite(StringBuilder sb, H2hResult.H2hPlayerSide side) {
+        String shortFio = Names.shortName(side.fullName());
+        if (shortFio.isBlank()) {
+            sb.append("<b>").append(escape(
+                    PlayerDisplayFormat.profileLinkLabel(side.nick(), side.playerId()))).append("</b>");
+            return;
         }
-        sb.append("Фаворит: ").append(escape(favoriteName)).append(" (≈").append(pct).append("%)");
+        sb.append("<b>").append(escape(shortFio)).append("</b>");
     }
 
     private void appendRecentMatches(StringBuilder sb, H2hResult result) {
@@ -258,7 +252,7 @@ public class Texts {
 
     public String partnerPick(PartnerPickPage page) {
         StringBuilder sb = new StringBuilder();
-        sb.append("🤝 <b>Партнёры · ").append(escape(page.tournamentName())).append("</b>\n");
+        sb.append("🤝 <b>Потенциальные партнёры · ").append(escape(page.tournamentName())).append("</b>\n");
         String limit = page.ratingLimit() != null ? formatRating(page.ratingLimit()) : "отк";
         sb.append("Лимит пары: ").append(limit).append('\n');
         if (page.maxPlayerRatingLimit() != null
@@ -266,8 +260,10 @@ public class Texts {
                 || page.maxPlayerRatingLimit().compareTo(page.ratingLimit()) != 0)) {
             sb.append("Макс. игрок: ").append(formatRating(page.maxPlayerRatingLimit())).append('\n');
         }
-        sb.append("Для: ").append(escape(page.userLabel()))
-                .append(" · 🅳 ").append(formatRating(BigDecimal.valueOf(page.userRating()))).append("\n\n");
+        sb.append("Игрок: ");
+        appendPlayerHeader(sb, page.userId(), page.userFullName(), page.userNick());
+        sb.append(" · ").append(MessageEmoji.DOUBLE).append(' ')
+                .append(formatRating(BigDecimal.valueOf(page.userRating()))).append("\n\n");
 
         appendPartnerBlock(sb, "Уже играли", page.playedBefore());
         sb.append('\n');
@@ -291,14 +287,11 @@ public class Texts {
         if (row.ideal()) {
             sb.append("⭐ ");
         }
-        String displayName = row.fullName();
-        if (displayName == null || displayName.isBlank()) {
-            displayName = row.nick();
-        }
-        sb.append("<b>").append(escape(displayName)).append("</b>\n");
+        appendPlayerHeader(sb, row.playerId(), row.fullName(), row.nick());
+        sb.append('\n');
         sb.append("  ").append(MessageEmoji.DOUBLE).append(' ')
                 .append(formatRating(BigDecimal.valueOf(row.rating())))
-                .append(" · ср. ")
+                .append(" · ").append(MessageEmoji.PAIR_RATING_AVG).append(" ср. ")
                 .append(formatRating(BigDecimal.valueOf(row.pairRatingAvg())))
                 .append(" · ")
                 .append(PartnerSuitabilityLabels.line(row.score()));
@@ -405,10 +398,8 @@ public class Texts {
 
     public String rivals(RivalsPage page) {
         StringBuilder sb = new StringBuilder();
-        sb.append("<b>Соперники</b>");
-        if (page.playerFullName() != null && !page.playerFullName().isBlank()) {
-            sb.append(" · ").append(escape(page.playerFullName()));
-        }
+        sb.append("<b>Соперники</b> · ");
+        appendPlayerHeader(sb, page.playerId(), page.playerFullName(), page.playerNick());
         sb.append(" · ").append(escape(page.disciplineFilterLabel()));
 
         if (page.rows().isEmpty()) {
@@ -439,7 +430,8 @@ public class Texts {
 
         for (RivalRow row : page.rows()) {
             index++;
-            prefixes.add(index + ". " + rivalDisplayName(row));
+            prefixes.add(index + ". " + PlayerDisplayFormat.rivalsRowLabel(
+                    row.fullName(), row.nick(), row.opponentId()));
             stats.add(wlWithPercent(row.wins(), row.losses()));
         }
 
@@ -459,6 +451,10 @@ public class Texts {
         sb.append("</pre>");
     }
 
+    /**
+     * ФИО + ссылка на профиль (ник или id), если ФИО нет — только ссылка.
+     * См. {@link PlayerDisplayFormat} и {@code docs/messages/00-principles.md}.
+     */
     private void appendPlayerHeader(StringBuilder sb, long playerId, String fullName, String nick) {
         if (fullName != null && !fullName.isBlank()) {
             sb.append("<b>").append(escape(fullName)).append("</b> (");
@@ -469,18 +465,8 @@ public class Texts {
         }
     }
 
-    private String rivalDisplayName(RivalRow row) {
-        if (row.fullName() != null && !row.fullName().isBlank()) {
-            return row.fullName();
-        }
-        if (row.nick() != null && !row.nick().isBlank()) {
-            return row.nick();
-        }
-        return String.valueOf(row.opponentId());
-    }
-
     private String playerLink(long playerId, String nick) {
-        String label = (nick != null && !nick.isBlank()) ? escape(nick) : String.valueOf(playerId);
+        String label = escape(PlayerDisplayFormat.profileLinkLabel(nick, playerId));
         return "<a href=\"" + ProfileLinks.url(playerId) + "\">" + label + "</a>";
     }
 

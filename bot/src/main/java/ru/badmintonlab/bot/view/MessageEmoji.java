@@ -11,6 +11,10 @@ public final class MessageEmoji {
     public static final String SINGLE = "\uD83D\uDC64";
     /** Парный рейтинг (D): два человека. */
     public static final String DOUBLE = "\uD83D\uDC65";
+    /** Средний рейтинг пары (R_A + R_B) / 2 при подборе партнёра. */
+    public static final String PAIR_RATING_AVG = "\u2696\uFE0F";
+    /** Score совместимости партнёра, %. */
+    public static final String PARTNER_SUITABILITY = "\uD83C\uDFAF";
     /** Победа. */
     public static final String WIN = "\uD83D\uDFE2";
     /** Поражение. */
