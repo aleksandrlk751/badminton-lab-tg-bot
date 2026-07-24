@@ -269,7 +269,7 @@ public class Texts {
         sb.append("Для: ").append(escape(page.userLabel()))
                 .append(" · 🅳 ").append(formatRating(BigDecimal.valueOf(page.userRating()))).append("\n\n");
 
-        appendPartnerBlock(sb, "Уже играли успешно", page.successful());
+        appendPartnerBlock(sb, "Уже играли", page.playedBefore());
         sb.append('\n');
         appendPartnerBlock(sb, "Новые кандидаты", page.newcomers());
         return sb.toString();

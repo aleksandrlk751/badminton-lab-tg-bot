@@ -158,6 +158,7 @@ public class PartnerPickService {
             double candidateRating = c.getRating().doubleValue();
             JointStats joint = jointStats.getOrDefault(c.getPlayerId(), JointStats.EMPTY);
             boolean successful = joint.positiveDeltaSince(historySince);
+            boolean playedBefore = joint.hasMeetings();
             double playability = playabilityIndexService.index(joint.meetingTimes());
 
             var scoreResult = partnerScoreService.score(new PartnerScoreService.Input(
@@ -182,27 +183,34 @@ public class PartnerPickService {
                     candidateRating,
                     scoreResult.score(),
                     successful,
+                    playedBefore,
                     categoryMatch,
                     goodForm,
                     ideal,
                     futurePair));
         }
 
-        Comparator<ScoredCandidate> cmp = Comparator
+        Comparator<ScoredCandidate> newcomerCmp = Comparator
                 .comparing(ScoredCandidate::categoryMatch).reversed()
                 .thenComparing(ScoredCandidate::score).reversed()
                 .thenComparing(c -> c.candidate().getNick());
 
-        List<PartnerCandidateRow> successfulRows = scored.stream()
-                .filter(ScoredCandidate::successfulHistory)
-                .sorted(cmp)
+        Comparator<ScoredCandidate> playedCmp = Comparator
+                .comparing(ScoredCandidate::successfulHistory).reversed()
+                .thenComparing(ScoredCandidate::categoryMatch).reversed()
+                .thenComparing(ScoredCandidate::score).reversed()
+                .thenComparing(c -> c.candidate().getNick());
+
+        List<PartnerCandidateRow> playedRows = scored.stream()
+                .filter(ScoredCandidate::playedBefore)
+                .sorted(playedCmp)
                 .limit(MAX_DISPLAY)
                 .map(s -> toRow(s, userRating))
                 .toList();
 
         List<PartnerCandidateRow> newcomerRows = scored.stream()
-                .filter(s -> !s.successfulHistory())
-                .sorted(cmp)
+                .filter(s -> !s.playedBefore())
+                .sorted(newcomerCmp)
                 .limit(MAX_DISPLAY)
                 .map(s -> toRow(s, userRating))
                 .toList();
@@ -217,7 +225,7 @@ public class PartnerPickService {
                 userId,
                 userLabel,
                 userRating,
-                successfulRows,
+                playedRows,
                 newcomerRows));
     }
 
@@ -294,6 +302,7 @@ public class PartnerPickService {
             double rating,
             double score,
             boolean successfulHistory,
+            boolean playedBefore,
             boolean categoryMatch,
             boolean goodForm,
             boolean ideal,
@@ -314,6 +323,10 @@ public class PartnerPickService {
 
         List<Instant> meetingTimes() {
             return meetingTimes;
+        }
+
+        boolean hasMeetings() {
+            return !meetingTimes.isEmpty();
         }
 
         double deltaSumSince(Instant since) {

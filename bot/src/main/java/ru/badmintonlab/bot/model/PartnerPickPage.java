@@ -13,6 +13,6 @@ public record PartnerPickPage(
         long userId,
         String userLabel,
         double userRating,
-        List<PartnerCandidateRow> successful,
+        List<PartnerCandidateRow> playedBefore,
         List<PartnerCandidateRow> newcomers
 ) {}
