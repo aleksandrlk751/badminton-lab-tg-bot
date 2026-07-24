@@ -7,6 +7,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import ru.badmintonlab.bot.model.PlayerCard;
 import ru.badmintonlab.bot.model.PlayerSearchResult;
 import ru.badmintonlab.bot.model.RivalsPage;
+import ru.badmintonlab.bot.model.UpcomingTournamentRow;
 import ru.badmintonlab.core.domain.Discipline;
 
 import java.util.ArrayList;
@@ -21,6 +22,7 @@ public class Keyboards {
     public InlineKeyboardMarkup mainMenu() {
         return InlineKeyboardMarkup.builder()
                 .keyboardRow(new InlineKeyboardRow(button("🔍 Найти игрока", CallbackData.MENU_SEARCH)))
+                .keyboardRow(new InlineKeyboardRow(button("🤝 Партнёр на турнир", CallbackData.MENU_PARTNER)))
                 .keyboardRow(new InlineKeyboardRow(button("🆚 Сравнить (H2H)", CallbackData.MENU_H2H)))
                 .keyboardRow(new InlineKeyboardRow(button("ℹ️ Помощь", CallbackData.MENU_HELP)))
                 .build();
@@ -103,6 +105,51 @@ public class Keyboards {
             rows.add(new InlineKeyboardRow(button("⬅️ К карточке", CallbackData.card(playerAId))));
         }
         return InlineKeyboardMarkup.builder().keyboard(rows).build();
+    }
+
+    public InlineKeyboardMarkup partnerEntry() {
+        return InlineKeyboardMarkup.builder()
+                .keyboardRow(new InlineKeyboardRow(
+                        button("📅 Ближайшие турниры", CallbackData.PARTNER_NEAR)))
+                .keyboardRow(new InlineKeyboardRow(
+                        button("🔗 Поиск по ссылке", CallbackData.PARTNER_LINK)))
+                .keyboardRow(new InlineKeyboardRow(button("⬅️ В меню", CallbackData.MENU_MAIN)))
+                .build();
+    }
+
+    public InlineKeyboardMarkup partnerTournaments(List<UpcomingTournamentRow> tournaments) {
+        List<InlineKeyboardRow> rows = new ArrayList<>();
+        for (UpcomingTournamentRow t : tournaments) {
+            String limit = t.ratingLimit() != null ? t.ratingLimit().stripTrailingZeros().toPlainString() : "отк";
+            String label = limit + " · " + truncate(t.name(), 40);
+            rows.add(new InlineKeyboardRow(button(label, CallbackData.partnerTournament(t.id()))));
+        }
+        rows.add(new InlineKeyboardRow(button("⬅️ Назад", CallbackData.PARTNER_BACK)));
+        rows.add(new InlineKeyboardRow(button("⬅️ В меню", CallbackData.MENU_MAIN)));
+        return InlineKeyboardMarkup.builder().keyboard(rows).build();
+    }
+
+    public InlineKeyboardMarkup partnerUserSearch(long tournamentId, List<PlayerSearchResult> results) {
+        List<InlineKeyboardRow> rows = new ArrayList<>();
+        for (PlayerSearchResult r : results) {
+            rows.add(new InlineKeyboardRow(button(
+                    SearchButtonLabel.format(r),
+                    CallbackData.partnerSelectUser(tournamentId, r.playerId()))));
+        }
+        return InlineKeyboardMarkup.builder().keyboard(rows).build();
+    }
+
+    public InlineKeyboardMarkup partnerPickResult() {
+        return InlineKeyboardMarkup.builder()
+                .keyboardRow(new InlineKeyboardRow(button("⬅️ В меню", CallbackData.MENU_MAIN)))
+                .build();
+    }
+
+    private static String truncate(String text, int max) {
+        if (text == null || text.length() <= max) {
+            return text == null ? "" : text;
+        }
+        return text.substring(0, max - 1) + "…";
     }
 
     private InlineKeyboardButton button(String text, String callbackData) {

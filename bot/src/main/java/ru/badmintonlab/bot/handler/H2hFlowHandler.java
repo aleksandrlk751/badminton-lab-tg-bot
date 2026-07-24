@@ -58,7 +58,7 @@ public class H2hFlowHandler {
     }
 
     public List<BotApiMethod<?>> startFromCard(long chatId, int messageId, long playerAId) {
-        sessionStore.put(chatId, new ChatSession(ChatSession.Mode.H2H_STEP2, playerAId, messageId, false));
+        sessionStore.put(chatId, new ChatSession(ChatSession.Mode.H2H_STEP2, playerAId, messageId, false, null));
         return editFlow(chatId, messageId, step2Text(playerAId), null);
     }
 
@@ -71,6 +71,10 @@ public class H2hFlowHandler {
     public List<BotApiMethod<?>> onFreeText(long chatId, String text) {
         Optional<ChatSession> session = sessionStore.get(chatId);
         if (session.isEmpty()) {
+            return List.of();
+        }
+        if (session.get().mode() == ChatSession.Mode.PARTNER_PICK_USER
+                || session.get().mode() == ChatSession.Mode.PARTNER_PICK_LINK) {
             return List.of();
         }
         if (searchService.isQueryTooShort(text)) {
@@ -131,8 +135,8 @@ public class H2hFlowHandler {
 
     private List<BotApiMethod<?>> onChangeOpponent(long chatId, int messageId, long playerAId) {
         ChatSession prev = sessionStore.get(chatId).orElse(
-                new ChatSession(ChatSession.Mode.H2H_STEP2, playerAId, messageId, false));
-        ChatSession next = new ChatSession(ChatSession.Mode.H2H_CHANGE_OPPONENT, playerAId, 0, prev.fromMenu());
+                new ChatSession(ChatSession.Mode.H2H_STEP2, playerAId, messageId, false, null));
+        ChatSession next = new ChatSession(ChatSession.Mode.H2H_CHANGE_OPPONENT, playerAId, 0, prev.fromMenu(), prev.tournamentId());
         sessionStore.put(chatId, next);
         return List.of(send(chatId, step2Text(playerAId), null));
     }
@@ -150,7 +154,7 @@ public class H2hFlowHandler {
             }
             return List.of(send(chatId, text, null));
         }
-        sessionStore.put(chatId, new ChatSession(ChatSession.Mode.H2H_RESULT, playerAId, messageId, fromMenu));
+        sessionStore.put(chatId, new ChatSession(ChatSession.Mode.H2H_RESULT, playerAId, messageId, fromMenu, null));
         InlineKeyboardMarkup markup = keyboards.h2hResult(playerAId, fromMenu);
         String text = texts.h2hResult(result.get());
         if (messageId != null && messageId > 0) {

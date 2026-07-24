@@ -3,6 +3,8 @@ package ru.badmintonlab.bot.view;
 import org.springframework.stereotype.Component;
 import ru.badmintonlab.bot.model.H2hResult;
 import ru.badmintonlab.bot.model.LastTournamentInfo;
+import ru.badmintonlab.bot.model.PartnerCandidateRow;
+import ru.badmintonlab.bot.model.PartnerPickPage;
 import ru.badmintonlab.bot.model.PlayerCard;
 import ru.badmintonlab.bot.model.RatingLine;
 import ru.badmintonlab.bot.model.RivalRow;
@@ -43,6 +45,7 @@ public class Texts {
 
                 • 🔍 Найти игрока — введите фамилию или ник (от 3 символов)
                 • Карточка — рейтинги 👤/👥, последний турнир, 🤺 соперники
+                • 🤝 Партнёр на турнир — подбор по лимиту, полу и score
                 • 🆚 Сравнить (H2H) — сравнение двух игроков по всем встречам
                 • 📈 История рейтинга — график (скоро)
 
@@ -194,6 +197,107 @@ public class Texts {
         return """
                 График истории рейтинга — скоро.
                 Текущие значения — на карточке.""";
+    }
+
+    public String partnerNoTournaments() {
+        return """
+                🤝 <b>Партнёр на турнир</b>
+
+                Ближайших парных турниров в базе пока нет.
+                Попробуйте «🔗 Поиск по ссылке» или дождитесь синхронизации worker.""";
+    }
+
+    public String partnerEntry() {
+        return """
+                🤝 <b>Партнёр на турнир</b>
+
+                Как выбрать турнир?""";
+    }
+
+    public String partnerTournamentList() {
+        return """
+                📅 <b>Ближайшие турниры</b>
+
+                Выберите турнир:""";
+    }
+
+    public String partnerPasteLink() {
+        return """
+                🔗 <b>Поиск по ссылке</b>
+
+                Вставьте ссылку на турнир с badminton4u.ru, например:
+                <code>https://badminton4u.ru/tournaments/12834</code>""";
+    }
+
+    public String partnerLinkInvalid() {
+        return "Не удалось распознать ссылку. Нужен адрес вида https://badminton4u.ru/tournaments/<id>";
+    }
+
+    public String partnerLinkNotDoubles() {
+        return "Это не парный турнир — подбор партнёра доступен только для парных дисциплин.";
+    }
+
+    public String partnerLinkSyncFailed() {
+        return "Не удалось загрузить страницу турнира. Попробуйте позже или выберите из списка ближайших.";
+    }
+
+    public String partnerLinkAlreadyStarted() {
+        return "Турнир уже начался или завершился — подбор доступен только для будущих турниров.";
+    }
+
+    public String partnerWhoAreYou() {
+        return """
+                🤝 <b>Кто вы?</b>
+
+                Введите фамилию или ник (от 3 символов):""";
+    }
+
+    public String partnerPickFailed() {
+        return "Не удалось подобрать партнёров: проверьте, что у игрока указан пол и рейтинг в базе.";
+    }
+
+    public String partnerPick(PartnerPickPage page) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("🤝 <b>Партнёры · ").append(escape(page.tournamentName())).append("</b>\n");
+        String limit = page.ratingLimit() != null ? formatRating(page.ratingLimit()) : "отк";
+        sb.append("Лимит пары: ").append(limit).append('\n');
+        sb.append("Для: ").append(escape(page.userLabel()))
+                .append(" · 🅳 ").append(formatRating(BigDecimal.valueOf(page.userRating()))).append("\n\n");
+
+        appendPartnerBlock(sb, "Уже играли успешно", page.successful());
+        sb.append('\n');
+        appendPartnerBlock(sb, "Новые кандидаты", page.newcomers());
+        return sb.toString();
+    }
+
+    private void appendPartnerBlock(StringBuilder sb, String title, List<PartnerCandidateRow> rows) {
+        sb.append("<b>").append(escape(title)).append("</b>\n");
+        if (rows.isEmpty()) {
+            sb.append("  — нет подходящих\n");
+            return;
+        }
+        for (PartnerCandidateRow row : rows) {
+            sb.append(formatPartnerRow(row)).append('\n');
+        }
+    }
+
+    private String formatPartnerRow(PartnerCandidateRow row) {
+        StringBuilder sb = new StringBuilder("  ");
+        if (row.ideal()) {
+            sb.append("⭐ ");
+        }
+        String displayName = row.fullName();
+        if (displayName == null || displayName.isBlank()) {
+            displayName = row.nick();
+        }
+        sb.append("<b>").append(escape(displayName)).append("</b>\n");
+        sb.append("  ").append(MessageEmoji.DOUBLE).append(' ')
+                .append(formatRating(BigDecimal.valueOf(row.rating())))
+                .append(" · ср. ")
+                .append(formatRating(BigDecimal.valueOf(row.pairRatingAvg())))
+                .append(" · ")
+                .append(PartnerSuitabilityLabels.line(row.score()));
+        return sb.toString();
     }
 
     public String searchResultsHeader(int count) {

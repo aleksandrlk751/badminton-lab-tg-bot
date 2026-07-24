@@ -23,6 +23,14 @@ public class TournamentRegistration {
     protected TournamentRegistration() {
     }
 
+    public static TournamentRegistration create(long tournamentId, long playerId, Long pairId, Instant registeredAt) {
+        TournamentRegistration reg = new TournamentRegistration();
+        reg.setId(new TournamentRegistrationId(tournamentId, playerId));
+        reg.setPairId(pairId);
+        reg.setRegisteredAt(registeredAt);
+        return reg;
+    }
+
     public TournamentRegistrationId getId() {
         return id;
     }
@@ -33,5 +41,17 @@ public class TournamentRegistration {
 
     public Instant getRegisteredAt() {
         return registeredAt;
+    }
+
+    public void setId(TournamentRegistrationId id) {
+        this.id = id;
+    }
+
+    public void setPairId(Long pairId) {
+        this.pairId = pairId;
+    }
+
+    public void setRegisteredAt(Instant registeredAt) {
+        this.registeredAt = registeredAt;
     }
 }

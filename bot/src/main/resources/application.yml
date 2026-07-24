@@ -25,3 +25,5 @@ badminton-lab:
     base-url: https://badminton4u.ru/
     user-agent: BadmintonLabBot/0.1 (+contact)
     max-rps: 5
+  snapshot:
+    region-code: ${SNAPSHOT_REGION:r77}

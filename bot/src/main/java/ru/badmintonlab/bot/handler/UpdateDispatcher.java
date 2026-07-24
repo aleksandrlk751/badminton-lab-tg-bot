@@ -35,6 +35,7 @@ public class UpdateDispatcher {
     private final PlayerCardLoader cardService;
     private final RivalLookup rivalService;
     private final H2hFlowHandler h2hFlow;
+    private final PartnerPickFlowHandler partnerPickFlow;
     private final ChatSessionStore sessionStore;
     private final Texts texts;
     private final Keyboards keyboards;
@@ -43,6 +44,7 @@ public class UpdateDispatcher {
                             PlayerCardLoader cardService,
                             RivalLookup rivalService,
                             H2hFlowHandler h2hFlow,
+                            PartnerPickFlowHandler partnerPickFlow,
                             ChatSessionStore sessionStore,
                             Texts texts,
                             Keyboards keyboards) {
@@ -50,6 +52,7 @@ public class UpdateDispatcher {
         this.cardService = cardService;
         this.rivalService = rivalService;
         this.h2hFlow = h2hFlow;
+        this.partnerPickFlow = partnerPickFlow;
         this.sessionStore = sessionStore;
         this.texts = texts;
         this.keyboards = keyboards;
@@ -70,6 +73,12 @@ public class UpdateDispatcher {
         String text = message.getText().trim();
         if (text.startsWith("/")) {
             return onCommand(chatId, text);
+        }
+        List<BotApiMethod<?>> partner = partnerPickFlow != null
+                ? partnerPickFlow.onFreeText(chatId, text)
+                : List.of();
+        if (!partner.isEmpty()) {
+            return partner;
         }
         List<BotApiMethod<?>> h2h = h2hFlow.onFreeText(chatId, text);
         if (!h2h.isEmpty()) {
@@ -119,7 +128,11 @@ public class UpdateDispatcher {
         boolean alert = false;
 
         try {
-            if (isH2hAction(action)) {
+            if (isPartnerAction(action)) {
+                if (chatId != null && messageId != null) {
+                    out.addAll(partnerPickFlow.onCallback(action, parts, chatId, messageId));
+                }
+            } else if (isH2hAction(action)) {
                 if (chatId != null && messageId != null) {
                     out.addAll(h2hFlow.onCallback(action, parts, chatId, messageId));
                 }
@@ -156,6 +169,14 @@ public class UpdateDispatcher {
         return out;
     }
 
+    private static boolean isPartnerAction(String action) {
+        return CallbackData.PARTNER_TOUR.equals(action)
+                || CallbackData.PARTNER_SELECT_USER.equals(action)
+                || CallbackData.PARTNER_NEAR.equals(action)
+                || CallbackData.PARTNER_LINK.equals(action)
+                || CallbackData.PARTNER_BACK.equals(action);
+    }
+
     private static boolean isH2hAction(String action) {
         return CallbackData.H2H.equals(action)
                 || CallbackData.H2H_SELECT_A.equals(action)
@@ -172,6 +193,7 @@ public class UpdateDispatcher {
                     "Отправьте ник или фамилию игрока (от 3 символов).", null));
             case "help" -> out.add(send(chatId, texts.help(), null));
             case "h2h" -> out.addAll(h2hFlow.startFromMenu(chatId));
+            case "partner" -> out.addAll(partnerPickFlow.startFromMenu(chatId));
             case "main" -> {
                 sessionStore.clear(chatId);
                 if (messageId != null) {

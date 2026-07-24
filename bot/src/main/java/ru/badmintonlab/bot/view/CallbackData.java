@@ -13,6 +13,7 @@ public final class CallbackData {
     // Меню
     public static final String MENU_SEARCH = "menu:search";
     public static final String MENU_H2H = "menu:h2h";
+    public static final String MENU_PARTNER = "menu:partner";
     public static final String MENU_HELP = "menu:help";
 
     // Действия с игроком
@@ -24,7 +25,13 @@ public final class CallbackData {
     public static final String H2H_SELECT_B = "h2s2"; // h2s2:{playerA}:{playerB}
     public static final String H2H_CHANGE = "h2c";    // h2c:{playerA}
     public static final String MENU_MAIN = "menu:main";
-    public static final String HISTORY = "hist";    // hist:{playerId} — заглушка (этап 7)
+    public static final String HISTORY = "hist";    // hist:{playerId} — заглушка (v2)
+
+    public static final String PARTNER_TOUR = "pt";       // pt:{tournamentId}
+    public static final String PARTNER_SELECT_USER = "pu"; // pu:{tournamentId}:{playerId}
+    public static final String PARTNER_NEAR = "pn";         // pn
+    public static final String PARTNER_LINK = "pl";          // pl
+    public static final String PARTNER_BACK = "pb";          // pb — к выбору способа
 
     public static final String NOOP = "noop";
 
@@ -69,6 +76,14 @@ public final class CallbackData {
 
     public static String history(long playerId) {
         return HISTORY + SEP + playerId;
+    }
+
+    public static String partnerTournament(long tournamentId) {
+        return PARTNER_TOUR + SEP + tournamentId;
+    }
+
+    public static String partnerSelectUser(long tournamentId, long playerId) {
+        return PARTNER_SELECT_USER + SEP + tournamentId + SEP + playerId;
     }
 
     public static String[] parse(String data) {

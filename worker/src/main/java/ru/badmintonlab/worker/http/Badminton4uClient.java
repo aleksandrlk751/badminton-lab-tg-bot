@@ -62,6 +62,17 @@ public class Badminton4uClient {
         return fetcher.get(baseUrl + "games/?user1ID=" + user1Id + "&user2ID=" + user2Id);
     }
 
+    /**
+     * Список парных турниров региона в окне дат (без фильтра «призёры»).
+     */
+    public Document upcomingPairTournaments(String regionCode, LocalDate from, LocalDate to) {
+        String url = baseUrl + "tournaments/?cities[]=" + regionCode
+                + "&types[]=d&types[]=md&types[]=wd&types[]=xd"
+                + "&date_from=" + from.format(FILTER_DATE)
+                + "&date_to=" + to.format(FILTER_DATE);
+        return fetcher.get(url);
+    }
+
     private String typeParam(Discipline discipline) {
         return discipline.name().toLowerCase(Locale.ROOT);
     }

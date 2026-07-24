@@ -40,7 +40,7 @@ class UpdateDispatcherTest {
     private final H2hFlowHandler h2hFlow =
             new H2hFlowHandler(search, card, null, sessions, new Texts(), new Keyboards());
     private final UpdateDispatcher dispatcher =
-            new UpdateDispatcher(search, card, rival, h2hFlow, sessions, new Texts(), new Keyboards());
+            new UpdateDispatcher(search, card, rival, h2hFlow, null, sessions, new Texts(), new Keyboards());
 
     @Test
     void startShowsMenu() {
@@ -146,7 +146,7 @@ class UpdateDispatcherTest {
     void h2hChangeOpponentSendsNewMessage() {
         card.card = Optional.of(sampleCard());
         sessions.put(100L, new ru.badmintonlab.bot.session.ChatSession(
-                ru.badmintonlab.bot.session.ChatSession.Mode.H2H_RESULT, 5L, 7, false));
+                ru.badmintonlab.bot.session.ChatSession.Mode.H2H_RESULT, 5L, 7, false, null));
 
         List<BotApiMethod<?>> res = dispatcher.dispatch(callbackUpdate("h2c:5", 100L, 7));
 

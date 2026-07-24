@@ -1,16 +1,20 @@
 package ru.badmintonlab.bot.view;
 
 import org.junit.jupiter.api.Test;
+import ru.badmintonlab.bot.model.LastTournamentInfo;
+import ru.badmintonlab.bot.model.PartnerCandidateRow;
+import ru.badmintonlab.bot.model.PartnerPickPage;
 import ru.badmintonlab.bot.model.PlayerCard;
 import ru.badmintonlab.bot.model.PlayerSearchResult;
 import ru.badmintonlab.bot.model.RatingLine;
 import ru.badmintonlab.bot.model.RivalRow;
 import ru.badmintonlab.bot.model.RivalsPage;
-import ru.badmintonlab.bot.model.LastTournamentInfo;
 import ru.badmintonlab.core.domain.Discipline;
+import ru.badmintonlab.core.domain.PairCompositionType;
 import ru.badmintonlab.core.metrics.StabilityLevel;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -168,5 +172,40 @@ class TextsTest {
     void rivalsHandlesEmptyDiscipline() {
         RivalsPage page = new RivalsPage(1L, "Иванов", Discipline.WD, List.of(), 0, 8, 0, List.of());
         assertTrue(texts.rivals(page).contains("Встреч в разряде WD нет"));
+    }
+
+    @Test
+    void partnerPickRowShowsFioRatingsAndSuitability() {
+        PartnerCandidateRow row = new PartnerCandidateRow(
+                1L,
+                "Петров Пётр Сергеевич",
+                "Petrov",
+                "Москва",
+                395.0,
+                388.0,
+                62.0,
+                true,
+                true,
+                true,
+                true,
+                PairCompositionType.XD);
+        PartnerPickPage page = new PartnerPickPage(
+                12836L,
+                "Space XDC",
+                Instant.parse("2026-07-25T10:00:00Z"),
+                new BigDecimal("650"),
+                18499L,
+                "Крупская Ольга (Olya_fox)",
+                380.0,
+                List.of(row),
+                List.of());
+
+        String text = texts.partnerPick(page);
+
+        assertTrue(text.contains("<b>Петров Пётр Сергеевич</b>"), text);
+        assertTrue(text.contains(MessageEmoji.DOUBLE + " 395"), text);
+        assertTrue(text.contains("ср. 388"), text);
+        assertTrue(text.contains("подходимость: хорошая (62%)"), text);
+        assertFalse(text.contains("Petrov"), text);
     }
 }

@@ -54,6 +54,7 @@ public class SnapshotService {
     private final MatchUpsertService matchUpsertService;
     private final RivalSummaryRebuildService rivalSummaryRebuildService;
     private final PlayerSexSyncService playerSexSyncService;
+    private final UpcomingTournamentsSyncService upcomingTournamentsSyncService;
     private final SnapshotMetaRepository snapshotMetaRepository;
 
     private final TournamentListParser listParser = new TournamentListParser();
@@ -72,6 +73,7 @@ public class SnapshotService {
                            MatchUpsertService matchUpsertService,
                            RivalSummaryRebuildService rivalSummaryRebuildService,
                            PlayerSexSyncService playerSexSyncService,
+                           UpcomingTournamentsSyncService upcomingTournamentsSyncService,
                            SnapshotMetaRepository snapshotMetaRepository) {
         this.client = client;
         this.snapshotProperties = snapshotProperties;
@@ -82,6 +84,7 @@ public class SnapshotService {
         this.matchUpsertService = matchUpsertService;
         this.rivalSummaryRebuildService = rivalSummaryRebuildService;
         this.playerSexSyncService = playerSexSyncService;
+        this.upcomingTournamentsSyncService = upcomingTournamentsSyncService;
         this.snapshotMetaRepository = snapshotMetaRepository;
     }
 
@@ -117,6 +120,13 @@ public class SnapshotService {
 
             metrics.setRivalRows(rivalSummaryRebuildService.rebuild());
             updateSnapshotMeta(region, from, to);
+
+            try {
+                upcomingTournamentsSyncService.syncRegion();
+            } catch (RuntimeException e) {
+                metrics.incError();
+                log.warn("Синхронизация будущих турниров не удалась: {}", e.toString());
+            }
 
             log.info("Слепок завершён: {}", metrics);
         } catch (RuntimeException e) {
