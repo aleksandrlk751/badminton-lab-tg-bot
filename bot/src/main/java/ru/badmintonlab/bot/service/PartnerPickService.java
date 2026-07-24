@@ -38,6 +38,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -238,6 +239,7 @@ public class PartnerPickService {
             double playability = playabilityIndexService.index(joint.meetingTimes());
             double weightedJointDelta = playabilityIndexService.weightedValueSum(
                     Instant.now(), joint.timedJointDeltas());
+            OptionalDouble candidateForm = playerFormService.formIfKnown(c.getPlayerId());
 
             var scoreResult = partnerScoreService.score(new PartnerScoreService.Input(
                     userRating,
@@ -245,13 +247,14 @@ public class PartnerPickService {
                     pairLimit,
                     maxPlayerLimit,
                     weightedJointDelta,
-                    playability));
+                    playability,
+                    candidateForm));
 
             Optional<GameAccentResult> accent = playerGameAccentService.accentForCard(c.getPlayerId());
             boolean categoryMatch = accent.isPresent()
                     && tournamentComposition != null
                     && tournamentComposition == accent.get().preferenceType();
-            boolean goodForm = playerFormService.formIfKnown(c.getPlayerId()).orElse(0) > 0;
+            boolean goodForm = candidateForm.isPresent() && candidateForm.getAsDouble() > 0;
             PairCompositionType futurePair = pairCompositionService.resolve(user.getSex(), c.getSex());
             boolean ideal = successful && categoryMatch && goodForm;
 

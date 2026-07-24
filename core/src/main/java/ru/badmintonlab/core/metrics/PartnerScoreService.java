@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 import ru.badmintonlab.core.config.MetricsProperties;
 
 import java.math.BigDecimal;
+import java.util.OptionalDouble;
 
 /**
  * Score совместимости партнёра (0–100), §2.5 {@code docs/FORMULAR.md}.
@@ -22,9 +23,11 @@ public class PartnerScoreService {
             double ratingCandidate,
             Double ratingLimit,
             Double maxPlayerRatingLimit,
-            /** Взвешенная по свежести сумма совместных дельт (§2.5 {@code FORMULAR.md}). */
+            /** Взвешенная по свежести сумма совместных дельт (§2.5 {@code docs/FORMULAR.md}). */
             double jointDeltaSum,
-            double partnerPlayability
+            double partnerPlayability,
+            /** Форма кандидата (§2.2); пусто — не влияет на score. */
+            OptionalDouble candidateForm
     ) {}
 
     public record Result(
@@ -51,8 +54,41 @@ public class PartnerScoreService {
         double w1 = metrics.w1().doubleValue();
         double w2 = metrics.w2().doubleValue();
         double w3 = metrics.w3().doubleValue();
-        double score = 100.0 * (w1 * cLimit + w2 * cDelta + w3 * cS);
+        double scoreBase = 100.0 * (w1 * cLimit + w2 * cDelta + w3 * cS);
+        double score = clampScore(scoreBase + 100.0 * formScoreFraction(input.candidateForm()));
         return new Result(score, cLimit, cDelta, cS);
+    }
+
+    /**
+     * Доля score (0..1) от формы кандидата: бонус sigmoid при Form&gt;0, линейный штраф при Form&lt;0.
+     */
+    private double formScoreFraction(OptionalDouble candidateForm) {
+        if (candidateForm.isEmpty()) {
+            return 0.0;
+        }
+        double form = candidateForm.getAsDouble();
+        if (form == 0.0) {
+            return 0.0;
+        }
+        double scale = metrics.partnerFormScale().doubleValue();
+        if (form > 0) {
+            double sig = MetricMath.sigmoid(form / scale);
+            double normalized = (sig - 0.5) / 0.5;
+            return metrics.wFormPlus().doubleValue() * Math.min(1.0, Math.max(0.0, normalized));
+        }
+        double penalty = metrics.wFormMinus().doubleValue()
+                * Math.min(1.0, Math.abs(form) / scale);
+        return -penalty;
+    }
+
+    private static double clampScore(double score) {
+        if (score < 0) {
+            return 0.0;
+        }
+        if (score > 100) {
+            return 100.0;
+        }
+        return score;
     }
 
     private static double cLimit(double ratingUser,

@@ -19,6 +19,9 @@ public record MetricsProperties(
         BigDecimal dScale,
         int partnerHistoryMonths,
         BigDecimal sRefPartner,
+        BigDecimal partnerFormScale,
+        BigDecimal wFormPlus,
+        BigDecimal wFormMinus,
         BigDecimal stabilitySurpriseThreshold,
         StabilityZoneMetrics stabilityZones,
         GameAccentMetrics gameAccent
@@ -37,6 +40,11 @@ public record MetricsProperties(
         if (partnerHistoryMonths <= 0) {
             throw new IllegalArgumentException("partnerHistoryMonths must be positive");
         }
+        if (partnerFormScale == null || partnerFormScale.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("partnerFormScale must be positive");
+        }
+        validateUnitFraction(wFormPlus, "wFormPlus");
+        validateUnitFraction(wFormMinus, "wFormMinus");
         if (stabilitySurpriseThreshold == null || stabilitySurpriseThreshold.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("stabilitySurpriseThreshold must be positive");
         }
@@ -45,6 +53,12 @@ public record MetricsProperties(
         }
         if (gameAccent == null) {
             throw new IllegalArgumentException("gameAccent must be configured");
+        }
+    }
+
+    private static void validateUnitFraction(BigDecimal value, String name) {
+        if (value == null || value.compareTo(BigDecimal.ZERO) < 0 || value.compareTo(BigDecimal.ONE) > 0) {
+            throw new IllegalArgumentException(name + " must be in [0, 1]");
         }
     }
 }

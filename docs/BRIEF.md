@@ -264,10 +264,15 @@ C_S     = S_partner / (S_partner + S_ref_partner)
 Итог:
 ```
 score_base = 100 · (w1·C_limit + w2·C_delta + w3·C_S)
-score      = score_base
+
+Form_cand > 0:  bonus  = w_form_plus · (sigmoid(Form/F_form) − 0.5) / 0.5
+Form_cand < 0:  penalty = w_form_minus · min(1, |Form|/F_form)
+нет данных:     bonus = penalty = 0
+
+score = clamp(score_base + 100·bonus − 100·penalty, 0, 100)
 ```
 
-`w1`, `w2`, `w3`, `D_scale`, `S_ref_partner`, `T` — **в конфиге** (`T` — только сортировка/⭐ в bot).
+`w1`, `w2`, `w3`, `D_scale`, `S_ref_partner`, `F_form`, `w_form_plus`, `w_form_minus`, `T` — **в конфиге** (`T` — сортировка/⭐ в bot).
 Для «Новых кандидатов» без совместной истории: `C_delta = 0`, `C_S = 0` (score ≈ только от C_limit).
 
 ## 6.1 Привязка Telegram ↔ игрок (v1, этап 8)
