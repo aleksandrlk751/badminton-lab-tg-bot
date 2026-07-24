@@ -21,6 +21,7 @@ public class PartnerScoreService {
             double ratingUser,
             double ratingCandidate,
             Double ratingLimit,
+            Double maxPlayerRatingLimit,
             double jointDeltaSum,
             double partnerPlayability,
             boolean successfulHistoryBlock
@@ -34,7 +35,11 @@ public class PartnerScoreService {
     ) {}
 
     public Result score(Input input) {
-        double cLimit = cLimit(input.ratingUser(), input.ratingCandidate(), input.ratingLimit());
+        double cLimit = cLimit(
+                input.ratingUser(),
+                input.ratingCandidate(),
+                input.ratingLimit(),
+                input.maxPlayerRatingLimit());
         double cDelta = input.jointDeltaSum() > 0
                 ? MetricMath.sigmoid(input.jointDeltaSum() / metrics.dScale().doubleValue())
                 : 0.0;
@@ -51,7 +56,16 @@ public class PartnerScoreService {
         return new Result(base * boost, cLimit, cDelta, cS);
     }
 
-    private static double cLimit(double ratingUser, double ratingCandidate, Double limit) {
+    private static double cLimit(double ratingUser,
+                                 double ratingCandidate,
+                                 Double pairLimit,
+                                 Double maxPlayerLimit) {
+        double cPair = cLimitPairAverage(ratingUser, ratingCandidate, pairLimit);
+        double cPlayer = cLimitPerPlayer(ratingUser, ratingCandidate, maxPlayerLimit);
+        return Math.min(cPair, cPlayer);
+    }
+
+    private static double cLimitPairAverage(double ratingUser, double ratingCandidate, Double limit) {
         if (limit == null || limit <= 0) {
             return 1.0;
         }
@@ -60,6 +74,17 @@ public class PartnerScoreService {
             return 0.0;
         }
         return Math.min(1.0, pairAvg / limit);
+    }
+
+    private static double cLimitPerPlayer(double ratingUser, double ratingCandidate, Double maxPlayer) {
+        if (maxPlayer == null || maxPlayer <= 0) {
+            return 1.0;
+        }
+        if (ratingUser > maxPlayer || ratingCandidate > maxPlayer) {
+            return 0.0;
+        }
+        double tightest = Math.min(ratingUser, ratingCandidate);
+        return Math.min(1.0, tightest / maxPlayer);
     }
 
     private double sRefPartner() {

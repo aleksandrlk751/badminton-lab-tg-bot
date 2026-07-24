@@ -261,6 +261,11 @@ public class Texts {
         sb.append("🤝 <b>Партнёры · ").append(escape(page.tournamentName())).append("</b>\n");
         String limit = page.ratingLimit() != null ? formatRating(page.ratingLimit()) : "отк";
         sb.append("Лимит пары: ").append(limit).append('\n');
+        if (page.maxPlayerRatingLimit() != null
+                && (page.ratingLimit() == null
+                || page.maxPlayerRatingLimit().compareTo(page.ratingLimit()) != 0)) {
+            sb.append("Макс. игрок: ").append(formatRating(page.maxPlayerRatingLimit())).append('\n');
+        }
         sb.append("Для: ").append(escape(page.userLabel()))
                 .append(" · 🅳 ").append(formatRating(BigDecimal.valueOf(page.userRating()))).append("\n\n");
 

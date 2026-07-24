@@ -117,7 +117,9 @@ Form_пара      = среднее индивидуальных парных ф
 ### 2.5 Score совместимости партнёра (0–100)
 
 ```
-C_limit    = min(1, ((R_A + R_B) / 2) / limit)     # ближе к лимиту (не выше) — лучше
+C_limit    = min(C_pair, C_player)
+C_pair     = min(1, ((R_A + R_B) / 2) / limit_pair)   # limit_pair — лимит среднего рейтинга пары
+C_player   = min(1, min(R_A, R_B) / limit_player)     # limit_player — макс. рейтинг одного игрока; NULL → 1
 C_delta    = sigmoid(Δ_joint / D_scale)            # Δ_joint — суммарная дельта обоих за T мес.
 C_S        = S_partner / (S_partner + S_ref_partner)
 score_base = 100 · (w1·C_limit + w2·C_delta + w3·C_S)

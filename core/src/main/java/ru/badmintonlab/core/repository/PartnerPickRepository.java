@@ -27,11 +27,13 @@ public interface PartnerPickRepository extends JpaRepository<Participation, Long
               AND p.sex IN :allowedSexes
               AND (:excludeCount = 0 OR p.id NOT IN :excludedIds)
               AND (:limit IS NULL OR (pr.rating + :userRating) / 2 <= :limit)
+              AND (:maxPlayerLimit IS NULL OR (pr.rating <= :maxPlayerLimit AND :userRating <= :maxPlayerLimit))
             ORDER BY pr.rating DESC
             """)
     List<PartnerCandidateView> findCandidates(@Param("userId") long userId,
                                               @Param("userRating") double userRating,
                                               @Param("limit") Double limit,
+                                              @Param("maxPlayerLimit") Double maxPlayerLimit,
                                               @Param("ratingDiscipline") Discipline ratingDiscipline,
                                               @Param("allowedSexes") Collection<PlayerSex> allowedSexes,
                                               @Param("excludeCount") int excludeCount,

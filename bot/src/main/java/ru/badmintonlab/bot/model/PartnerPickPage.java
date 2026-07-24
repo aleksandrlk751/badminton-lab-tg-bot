@@ -9,6 +9,7 @@ public record PartnerPickPage(
         String tournamentName,
         Instant tournamentStartsAt,
         BigDecimal ratingLimit,
+        BigDecimal maxPlayerRatingLimit,
         long userId,
         String userLabel,
         double userRating,

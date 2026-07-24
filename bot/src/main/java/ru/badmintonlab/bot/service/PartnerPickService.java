@@ -114,9 +114,16 @@ public class PartnerPickService {
         Discipline pairDiscipline = TournamentDisciplineSupport.pairDiscipline(
                 tournament.getCategoryCode(), tournament.getName());
         double userRating = resolvePairRating(userId);
-        Double limit = tournament.getRatingLimit() != null
+        Double pairLimit = tournament.getRatingLimit() != null
                 ? tournament.getRatingLimit().doubleValue()
                 : null;
+        Double maxPlayerLimit = tournament.getMaxPlayerRatingLimit() != null
+                ? tournament.getMaxPlayerRatingLimit().doubleValue()
+                : null;
+
+        if (!fitsTournamentRating(userRating, maxPlayerLimit)) {
+            return Optional.empty();
+        }
 
         Set<Long> excluded = registrationRepository.findPlayerIdsInConfirmedPairs(tournamentId);
         List<PlayerSex> allowedSexes = allowedPartnerSexes(user.getSex(), pairDiscipline);
@@ -127,7 +134,8 @@ public class PartnerPickService {
         List<PartnerCandidateView> raw = partnerPickRepository.findCandidates(
                 userId,
                 userRating,
-                limit,
+                pairLimit,
+                maxPlayerLimit,
                 Discipline.D,
                 allowedSexes,
                 excluded.size(),
@@ -155,7 +163,8 @@ public class PartnerPickService {
             var scoreResult = partnerScoreService.score(new PartnerScoreService.Input(
                     userRating,
                     candidateRating,
-                    limit,
+                    pairLimit,
+                    maxPlayerLimit,
                     joint.deltaSumSince(historySince),
                     playability,
                     successful));
@@ -204,11 +213,19 @@ public class PartnerPickService {
                 tournament.getName(),
                 tournament.getStartsAt(),
                 tournament.getRatingLimit(),
+                tournament.getMaxPlayerRatingLimit(),
                 userId,
                 userLabel,
                 userRating,
                 successfulRows,
                 newcomerRows));
+    }
+
+    private static boolean fitsTournamentRating(double userRating, Double maxPlayerLimit) {
+        if (maxPlayerLimit != null && maxPlayerLimit > 0 && userRating > maxPlayerLimit) {
+            return false;
+        }
+        return true;
     }
 
     private PartnerCandidateRow toRow(ScoredCandidate s, double userRating) {

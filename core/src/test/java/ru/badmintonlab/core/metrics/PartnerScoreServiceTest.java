@@ -15,23 +15,35 @@ class PartnerScoreServiceTest {
 
     @Test
     void newCandidateScoreMostlyFromLimit() {
-        var result = service.score(new PartnerScoreService.Input(400, 380, 500.0, 0, 0, false));
+        var result = service.score(new PartnerScoreService.Input(400, 380, 500.0, null, 0, 0, false));
         assertEquals(31.2, result.score(), 0.5);
         assertEquals(0.78, result.cLimit(), 0.01);
     }
 
     @Test
     void successfulHistoryGetsBoost() {
-        var base = service.score(new PartnerScoreService.Input(400, 400, 500.0, 15, 2, false));
-        var boosted = service.score(new PartnerScoreService.Input(400, 400, 500.0, 15, 2, true));
+        var base = service.score(new PartnerScoreService.Input(400, 400, 500.0, null, 15, 2, false));
+        var boosted = service.score(new PartnerScoreService.Input(400, 400, 500.0, null, 15, 2, true));
         assertEquals(base.score() * 1.2, boosted.score(), 0.01);
     }
 
     @Test
     void pairAboveLimitScoresZeroOnLimitComponent() {
-        var result = service.score(new PartnerScoreService.Input(520, 520, 500.0, 0, 0, false));
+        var result = service.score(new PartnerScoreService.Input(520, 520, 500.0, null, 0, 0, false));
         assertEquals(0.0, result.cLimit(), 1e-9);
         assertEquals(0.0, result.score(), 1e-9);
+    }
+
+    @Test
+    void perPlayerCapCanReduceLimitComponent() {
+        var result = service.score(new PartnerScoreService.Input(680, 620, 650.0, 700.0, 0, 0, false));
+        assertEquals(0.887, result.cLimit(), 0.01);
+    }
+
+    @Test
+    void playerAboveMaxScoresZeroOnLimitComponent() {
+        var result = service.score(new PartnerScoreService.Input(710, 600, 650.0, 700.0, 0, 0, false));
+        assertEquals(0.0, result.cLimit(), 1e-9);
     }
 
     private static MetricsProperties properties() {

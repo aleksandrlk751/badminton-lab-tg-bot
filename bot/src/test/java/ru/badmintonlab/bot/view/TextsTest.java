@@ -194,6 +194,7 @@ class TextsTest {
                 "Space XDC",
                 Instant.parse("2026-07-25T10:00:00Z"),
                 new BigDecimal("650"),
+                new BigDecimal("700"),
                 18499L,
                 "Крупская Ольга (Olya_fox)",
                 380.0,
@@ -205,6 +206,7 @@ class TextsTest {
         assertTrue(text.contains("<b>Петров Пётр Сергеевич</b>"), text);
         assertTrue(text.contains(MessageEmoji.DOUBLE + " 395"), text);
         assertTrue(text.contains("ср. 388"), text);
+        assertTrue(text.contains("Макс. игрок: 700"), text);
         assertTrue(text.contains("подходимость: хорошая (62%)"), text);
         assertFalse(text.contains("Petrov"), text);
     }
