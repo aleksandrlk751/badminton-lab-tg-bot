@@ -31,6 +31,9 @@ public class Tournament {
     @Column(name = "rating_limit", precision = 6, scale = 1)
     private BigDecimal ratingLimit;
 
+    @Column(name = "max_player_rating_limit", precision = 6, scale = 1)
+    private BigDecimal maxPlayerRatingLimit;
+
     @Column(name = "avg_rating", precision = 6, scale = 1)
     private BigDecimal avgRating;
 
@@ -107,6 +110,14 @@ public class Tournament {
 
     public void setRatingLimit(BigDecimal ratingLimit) {
         this.ratingLimit = ratingLimit;
+    }
+
+    public BigDecimal getMaxPlayerRatingLimit() {
+        return maxPlayerRatingLimit;
+    }
+
+    public void setMaxPlayerRatingLimit(BigDecimal maxPlayerRatingLimit) {
+        this.maxPlayerRatingLimit = maxPlayerRatingLimit;
     }
 
     public BigDecimal getAvgRating() {

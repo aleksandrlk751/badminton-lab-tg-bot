@@ -75,6 +75,7 @@ CREATE TABLE tournament (
     name            VARCHAR(256) NOT NULL,
     category_code   VARCHAR(16),              -- SE, DF, XDC …
     rating_limit    NUMERIC(6,1),             -- из <var>; NULL = «отк» / без лимита
+    max_player_rating_limit NUMERIC(6,1),     -- макс. игрока в паре; NULL = без лимита
     avg_rating      NUMERIC(6,1),
     coefficient     NUMERIC(4,2),
     hall_id         BIGINT,

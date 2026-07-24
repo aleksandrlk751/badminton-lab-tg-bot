@@ -12,6 +12,7 @@ import ru.badmintonlab.core.repository.TournamentRegistrationRepository;
 import ru.badmintonlab.core.repository.TournamentRepository;
 import ru.badmintonlab.parser.TournamentListParser;
 import ru.badmintonlab.parser.TournamentPageParser;
+import ru.badmintonlab.parser.TournamentRatingLimitsParser;
 import ru.badmintonlab.parser.TournamentRegistrationParser;
 import ru.badmintonlab.parser.model.TournamentListEntry;
 import ru.badmintonlab.parser.model.TournamentPageMeta;
@@ -43,6 +44,7 @@ public class UpcomingTournamentsSyncService {
 
     private final TournamentListParser listParser = new TournamentListParser();
     private final TournamentPageParser pageParser = new TournamentPageParser();
+    private final TournamentRatingLimitsParser ratingLimitsParser = new TournamentRatingLimitsParser();
     private final TournamentRegistrationParser registrationParser = new TournamentRegistrationParser();
 
     public UpcomingTournamentsSyncService(Badminton4uClient client,
@@ -98,7 +100,7 @@ public class UpcomingTournamentsSyncService {
             throw new IllegalArgumentException("Tournament is not doubles: " + tournamentId);
         }
         String region = snapshotProperties.regionCode();
-        upsertTournamentFromMeta(meta, region);
+        upsertTournamentFromMeta(meta, region, page);
         ru.badmintonlab.parser.model.TournamentRegistration parsed = registrationParser.parse(page);
         upsertRegistration(tournamentId, parsed, meta);
         return tournamentId;
@@ -107,17 +109,20 @@ public class UpcomingTournamentsSyncService {
     private void syncTournament(TournamentListEntry entry, String region) {
         var page = client.tournamentPage(entry.id());
         TournamentPageMeta meta = pageParser.parse(page);
-        upsertTournament(entry, meta, region);
+        upsertTournament(entry, meta, region, page);
         ru.badmintonlab.parser.model.TournamentRegistration parsed = registrationParser.parse(page);
         upsertRegistration(entry.id(), parsed, meta);
     }
 
-    private void upsertTournament(TournamentListEntry entry, TournamentPageMeta meta, String region) {
+    private void upsertTournament(TournamentListEntry entry,
+                                  TournamentPageMeta meta,
+                                  String region,
+                                  org.jsoup.nodes.Document page) {
         Tournament tournament = tournamentRepository.findById(entry.id())
                 .orElseGet(() -> new Tournament(entry.id()));
         tournament.setName(meta.name() != null && !meta.name().isBlank() ? meta.name() : entry.name());
         tournament.setCategoryCode(meta.categoryCode());
-        tournament.setRatingLimit(meta.ratingLimit().orElse(entry.ratingLimit().orElse(null)));
+        applyRatingLimits(tournament, page);
         tournament.setRegionCode(region);
         tournament.setStatus(TournamentStatus.UPCOMING);
         LocalDate date = entry.date();
@@ -126,16 +131,21 @@ public class UpcomingTournamentsSyncService {
         tournamentRepository.save(tournament);
     }
 
-    private void upsertTournamentFromMeta(TournamentPageMeta meta, String region) {
+    private void upsertTournamentFromMeta(TournamentPageMeta meta, String region, org.jsoup.nodes.Document page) {
         Tournament tournament = tournamentRepository.findById(meta.id())
                 .orElseGet(() -> new Tournament(meta.id()));
         tournament.setName(meta.name());
         tournament.setCategoryCode(meta.categoryCode());
-        tournament.setRatingLimit(meta.ratingLimit().orElse(null));
+        applyRatingLimits(tournament, page);
         tournament.setRegionCode(region);
         tournament.setStatus(TournamentStatus.UPCOMING);
         tournament.setStartsAt(SnapshotSupport.toInstant(meta.startsAt()));
         tournamentRepository.save(tournament);
+    }
+
+    private void applyRatingLimits(Tournament tournament, org.jsoup.nodes.Document page) {
+        var limits = ratingLimitsParser.parse(page, tournament.getCategoryCode(), tournament.getName());
+        TournamentRatingLimitsBackfillService.applyLimits(tournament, limits);
     }
 
     private void upsertRegistration(long tournamentId,

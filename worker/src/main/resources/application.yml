@@ -31,6 +31,7 @@ badminton-lab:
     run-on-startup: ${SNAPSHOT_RUN_ON_STARTUP:false}
     sync-sex-on-startup: ${SNAPSHOT_SYNC_SEX_ON_STARTUP:false}
     infer-sex-from-names-on-startup: ${SNAPSHOT_INFER_SEX_FROM_NAMES_ON_STARTUP:false}
+    backfill-rating-limits-on-startup: ${SNAPSHOT_BACKFILL_RATING_LIMITS_ON_STARTUP:false}
     max-tournaments: ${SNAPSHOT_MAX_TOURNAMENTS:0}
     scheduled-enabled: ${SNAPSHOT_SCHEDULED_ENABLED:false}
     cron: ${SNAPSHOT_CRON:0 0 4 * * *}

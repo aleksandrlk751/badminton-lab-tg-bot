@@ -50,6 +50,37 @@ public final class ParseUtils {
         return Optional.of(new BigDecimal(normalized));
     }
 
+    /**
+     * Лимит из {@code <var>} на странице турнира: одно число или диапазон {@code 350-400}
+     * (берётся верхняя граница — ограничение «не выше»).
+     */
+    public static Optional<BigDecimal> parseRatingLimitVar(String text) {
+        if (text == null || text.isBlank()) {
+            return Optional.empty();
+        }
+        String normalized = text.trim()
+                .replace('\u2212', '-')
+                .replace("+", "")
+                .replace(",", ".");
+        if (normalized.isBlank() || "отк".equalsIgnoreCase(normalized)) {
+            return Optional.empty();
+        }
+        if (normalized.contains("-")) {
+            String[] parts = normalized.split("-");
+            BigDecimal max = null;
+            for (String part : parts) {
+                String p = part.trim();
+                if (p.isEmpty()) {
+                    continue;
+                }
+                BigDecimal value = new BigDecimal(p);
+                max = max == null || value.compareTo(max) > 0 ? value : max;
+            }
+            return max == null ? Optional.empty() : Optional.of(max);
+        }
+        return Optional.of(new BigDecimal(normalized));
+    }
+
     public static Optional<BigDecimal> parseVar(Element parent) {
         if (parent == null) {
             return Optional.empty();
